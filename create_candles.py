@@ -1,6 +1,7 @@
 import pandas as pd
 from tqdm import tqdm
 import os
+import numpy as np
 
 def create_candles(file_path, output_path, start_time=93000000, end_time=160000000):
     """
@@ -32,8 +33,6 @@ def create_candles(file_path, output_path, start_time=93000000, end_time=1600000
                     # Sum up the trade volume
                     candle.append(candle_data[candle_data["Action"] == "T"]["Quantity"].sum())
                     
-                    # TODO: clean data from spoofing - check empty values
-                    
                     # Select only bid data and get min
                     bid_min = candle_data[candle_data["Side"] == "B"]["Price"].min()
                     # Get the volume at the min bid price
@@ -46,8 +45,18 @@ def create_candles(file_path, output_path, start_time=93000000, end_time=1600000
                     ask_max = candle_data[candle_data["Side"] == "A"]["Price"].max()
                     quantity_ask_max = candle_data[(candle_data["Side"] == "A") & (candle_data["Price"] == ask_max)]["Quantity"].max()
                     
-                    candle.extend([quantity_bid_min, quantity_bid_max, quantity_ask_min, quantity_ask_max])
-                    candle.extend([bid_min, bid_max, ask_min, ask_max])
+                    metrics = [quantity_bid_min, quantity_bid_max, quantity_ask_min, quantity_ask_max, bid_min, bid_max, ask_min, ask_max]
+                    
+                    for metric in metrics:
+                        if np.isnan(metric):
+                            if len(candles) == 0: 
+                                # If there are no candles yet, set the metric to 0
+                                metric = 0
+                            else:
+                                # If there are candles, set the metric to the last candle's metric
+                                metric = candles[-1][len(candle)]
+                            
+                        candle.append(metric)
                     
                     candles.append(candle)
                     candle_has_data = False
