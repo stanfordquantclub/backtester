@@ -5,11 +5,17 @@ import numpy as np
 
 def create_candles(file_path, output_path, start_time=93000000, end_time=160000000):
     """
-    Bid-ask price min and max not including Side == T
+    Description:
+        Bid-ask price min and max not including Side == T
+        Trade Volume only including Side == T
+        Bid Volume only including Side == B
+        Ask Volume only including Side == A
     
-    Trade Volume only including Side == T
-    Bid Volume only including Side == B
-    Ask Volume only including Side == A
+    Args:
+        file_path (str): path to the file to create candles from
+        output_path (str): path to the output directory - file will be name Candles.<file_name>.csv
+        start_time (int): start time of the candles in milliseconds
+        end_time (int): end time of the candles in milliseconds
     """    
     
     candles = []
@@ -20,7 +26,7 @@ def create_candles(file_path, output_path, start_time=93000000, end_time=1600000
     start_index = 0
             
     for index, row in tqdm(df.iterrows(), total=df.shape[0]):
-        if row["Timestamp"] >= start_time and row["Timestamp"] <= end_time:
+        if row["Timestamp"] >= start_time and row["Timestamp"] <= end_time + 1000:
             if row["Timestamp"] < current_time:
                 if not candle_has_data:
                     start_index = index
@@ -65,6 +71,10 @@ def create_candles(file_path, output_path, start_time=93000000, end_time=1600000
                     current_time += 41000
                 else:
                     current_time += 1000
+                    
+                # Increment to the next hour
+                if (current_time/100000) % 100 == 60:
+                    current_time += 4000000
                     
                 if row["Timestamp"] < current_time:
                     if not candle_has_data:
