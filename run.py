@@ -9,15 +9,16 @@ from engine import Engine
 #   end_time=154500000
 # )
 
-start_date = date(2021, 1, 1)
-end_date = date(2021, 3, 8)
+start_date = date(2022, 12, 1)
+end_date = date(2022, 12, 18)
 # print(start_date.strftime("%Y%m%d"))
 
 test_engine = Engine(
     security_name='SPY',
     start_cash=10**6,
     start_date=start_date,
-    end_date=end_date
+    end_date=end_date, 
+    root_path="/mnt/z/srv/sqc/data/us-options-tanq"
 )
 
 test_engine.get_data()

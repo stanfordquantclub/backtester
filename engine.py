@@ -1,9 +1,16 @@
 import pandas_market_calendars as mcal
 from datetime import date
 import pytz
+import glob
+import pandas as pd
+
+class Slice:
+    def __init__(self, data_header, data):
+        self.data_header = data_header
+        self.data = data
 
 class Engine: 
-    def __init__(self, security_name, start_cash, start_date=None, end_date=None, path_dates=None, filter=None, timezone="America/New_York", root_path="/srv/sqc/data/us-options-tanq"):
+    def __init__(self, security_name: str, start_cash: float, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
         """
         Args:
             security_name (str): name of the security to backtest
@@ -14,13 +21,15 @@ class Engine:
             start_cash (float): starting cash for the backtest
         """
         
-        self.security = security_name
+        self.security_name = security_name
         
         self.start_date = start_date
         self.end_date = end_date
         self.path_dates = path_dates
-        self.filter = filter
-        
+        self.filter_paths = filter_paths
+        self.root_path = root_path
+        self.timezone = timezone
+
         self.start_cash = start_cash
         
         self.schedule = self.get_data()
@@ -36,8 +45,6 @@ class Engine:
             list[str]: list of paths to the data
         """
         
-        
-        
         if self.path_dates:
             return self.path_dates
         
@@ -48,19 +55,22 @@ class Engine:
             
             schedule = nyse.schedule(self.start_date, self.end_date)
 
-            schedule["market_open"] = schedule["market_open"].dt.tz_convert(pytz.timezone('US/Eastern'))
-            schedule["market_close"] = schedule["market_close"].dt.tz_convert(pytz.timezone('US/Eastern'))
+            schedule["market_open"] = schedule["market_open"].dt.tz_convert(pytz.timezone(self.timezone))
+            schedule["market_close"] = schedule["market_close"].dt.tz_convert(pytz.timezone(self.timezone))
 
             for day, (open_date, close_date) in schedule.iterrows():
-                print(open_date, close_date)
-            
-            
-            # if self.filter:
-            #     schedule = schedule[schedule["market_open"].dt.strftime("%Y%m%d") == self.filter]
+                data_path = f"{self.root_path}/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/{self.security_name}/*/*"
+
+                data_path_contracts = glob.glob(data_path)
+                print(data_path_contracts)
+                if self.filter_paths:
+                    data_path_contracts = [contract for contract in data_path_contracts if self.filter_paths in contract] 
+
+                data_paths.extend(data_path_contracts)
 
             return data_paths
 
-    def onData(self, data):
+    def onData(self, data: Slice):
         # for day in self.schedule()   
         #     for second in 
         pass
@@ -69,6 +79,8 @@ class Engine:
         data_paths = self.get_data()
         
         for paths in data_paths:
-            file = open(paths, "r")
-            for data in file:
-                self.onData(data)
+            df = pd.read_csv(paths)
+            
+            for (idx, row) in df.iterrows():
+                data_slice = Slice(row.index, row)
+                self.onData(data_slice)
