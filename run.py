@@ -1,12 +1,15 @@
 from create_candles import create_candles
-from datetime import date
+from datetime import date, time, datetime, timedelta
 from engine import Engine
+
+start_time = time(9, 30, 0)
+end_time = time(16, 0, 0)
 
 create_candles(
   'Data/SPY.P390.20230109.csv',
   output_path="Data/",
-  start_time=93000000, 
-  end_time=160000000
+  start_time=start_time, 
+  end_time=end_time
 )
 
 # start_date = date(2022, 12, 1)

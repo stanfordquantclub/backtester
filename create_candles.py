@@ -2,8 +2,9 @@ import pandas as pd
 from tqdm import tqdm
 import os
 import numpy as np
+from datetime import date, time, datetime, timedelta
 
-def create_candles(file_path, output_path, start_time=93000000, end_time=160000000):
+def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=time(16, 0, 0)):
     """
     Description:
         Bid-ask price min and max not including Side == T
@@ -14,19 +15,28 @@ def create_candles(file_path, output_path, start_time=93000000, end_time=1600000
     Args:
         file_path (str): path to the file to create candles from
         output_path (str): path to the output directory - file will be name Candles.<file_name>.csv
-        start_time (int): start time of the candles in milliseconds
-        end_time (int): end time of the candles in milliseconds
+        start_time (datetime.time): start time of the candles in milliseconds
+        end_time (datetime.time): end time of the candles in milliseconds
     """    
     
     candles = []
     df = pd.read_csv(file_path)
     
     candle_has_data = False
-    current_time = start_time + 1000
+    
+    # Convert to milliseconds
+    start_time = int(start_time.strftime("%H%M%S")) * 1000
+    
+    current_time = start_time
+    
+    # Add 1 second to end time to include the last second
+    end_time = (datetime.combine(date.today(), end_time) + timedelta(seconds=1)).time()
+    end_time = int(end_time.strftime("%H%M%S")) * 1000
+
     start_index = 0
             
     for index, row in tqdm(df.iterrows(), total=df.shape[0]):
-        if row["Timestamp"] >= start_time and row["Timestamp"] <= end_time + 1000:
+        if row["Timestamp"] >= start_time and row["Timestamp"] <= end_time:
             if row["Timestamp"] < current_time:
                 if not candle_has_data:
                     start_index = index
@@ -67,6 +77,7 @@ def create_candles(file_path, output_path, start_time=93000000, end_time=1600000
                     candles.append(candle)
                     candle_has_data = False
                 
+                # Increment to the next second
                 if (current_time/1000) % 100 == 59:
                     current_time += 41000
                 else:
