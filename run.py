@@ -1,6 +1,6 @@
 from create_candles import create_candles
 from datetime import date, time, datetime, timedelta
-from engine import Engine
+from psrc.engine import Engine
 
 start_time = time(9, 30, 0)
 end_time = time(16, 0, 0)
