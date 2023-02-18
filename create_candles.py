@@ -19,21 +19,19 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
         end_time (datetime.time): end time of the candles in milliseconds
     """    
     
-    candles = []
     df = pd.read_csv(file_path)
     
     candle_has_data = False
+    candles = []
+    start_index = 0
     
     # Convert to milliseconds
     start_time = int(start_time.strftime("%H%M%S")) * 1000
-    
     current_time = start_time
     
     # Add 1 second to end time to include the last second
     end_time = (datetime.combine(date.today(), end_time) + timedelta(seconds=1)).time()
     end_time = int(end_time.strftime("%H%M%S")) * 1000
-
-    start_index = 0
             
     for index, row in tqdm(df.iterrows(), total=df.shape[0]):
         if row["Timestamp"] >= start_time and row["Timestamp"] <= end_time:
@@ -77,7 +75,7 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
                     candles.append(candle)
                     candle_has_data = False
                 
-                # Increment to the next second
+                # Increment to the next minute
                 if (current_time/1000) % 100 == 59:
                     current_time += 41000
                 else:
