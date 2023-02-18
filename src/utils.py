@@ -1,14 +1,14 @@
-"""
-The purpose of this file is to create mehtods used in the calculations of technical indicators
-This files will then be imported into the contracts class
-"""
+import numpy as np
 
-"""
-takes a list and returns the sum of the list
-period is how many elements should be considered in the calculation
-this function also does not consider values that = 0
-used in impulse calculation
-"""
+class Slice:
+    """
+    This class formats row data from the csv. Used by the on_data method in 
+    Engine to pass data to the strategy.
+    """
+    def __init__(self, data_header, data):
+        self.data_header = data_header
+        self.data = data
+
 def vel_list(list):
     vel_list = [0]
     for ind in range(len(list) - 1):
