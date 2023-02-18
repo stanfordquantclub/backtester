@@ -2,18 +2,21 @@ import pandas_market_calendars as mcal
 from datetime import date
 import pytz
 import glob
-from utils import Slice
+from src.utils import Slice
 import pandas as pd
+
 class Engine: 
     def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
         """
+        Initialize the defaults for the engine
+
         Args:
             security_name (str): name of the security to backtest
             start_date (date): start date of the backtest
             end_date (date): end date of the backtest
             path_dates (list[str]): list of paths to use for the backtest - if this is used, start_date and end_date are ignored
             filter (str): filter to use when generating paths within the start_date and end_date or path_dates
-            start_cash (float): starting cash for the backtest
+            
         """
         print("Initialize Defaults")
         
@@ -38,6 +41,8 @@ class Engine:
 
     def get_data_paths(self):
         """
+        Get's the data paths for the backtest
+        
         Args:
             start (date): start date of the backtest
             end (date): end date of the backtest
@@ -71,7 +76,7 @@ class Engine:
                 data_paths.extend(data_path_contracts)
 
             return data_paths
-
+        
     def on_data(self, data: Slice):
         """
         Method is to be overriden by subclass
@@ -87,6 +92,7 @@ class Engine:
         
         data_paths = self.get_data_paths()
         
+        return
         for paths in data_paths:
             df = pd.read_csv(paths)
             

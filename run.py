@@ -25,7 +25,6 @@ class CustomModel(Engine):
         pass
     
     def on_data(self, data: Slice):
-        print("Custom Date")
         pass
 
 model = CustomModel()
