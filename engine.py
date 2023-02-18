@@ -10,7 +10,7 @@ class Slice:
         self.data = data
 
 class Engine: 
-    def __init__(self, security_name: str, start_cash: float, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
+    def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
         """
         Args:
             security_name (str): name of the security to backtest
@@ -20,21 +20,28 @@ class Engine:
             filter (str): filter to use when generating paths within the start_date and end_date or path_dates
             start_cash (float): starting cash for the backtest
         """
+        print("Initialize Defaults")
         
         self.security_name = security_name
         
         self.start_date = start_date
         self.end_date = end_date
         self.path_dates = path_dates
+        
         self.filter_paths = filter_paths
         self.root_path = root_path
         self.timezone = timezone
 
         self.start_cash = start_cash
-        
-        self.schedule = self.get_data()
+    
+    def initialize(self):
+        """
+        Method is to be overriden by subclasses
+        """
+        print("Initialize Engine")
+        pass
 
-    def get_data(self):
+    def get_data_paths(self):
         """
         Args:
             start (date): start date of the backtest
@@ -70,17 +77,20 @@ class Engine:
 
             return data_paths
 
-    def onData(self, data: Slice):
+    def on_data(self, data: Slice):
         # for day in self.schedule()   
         #     for second in 
         pass
 
     def run(self):
-        data_paths = self.get_data()
+        self.initialize_defaults()
+        self.initialize()
         
-        for paths in data_paths:
-            df = pd.read_csv(paths)
+        # data_paths = self.get_data_paths()
+        
+        # for paths in data_paths:
+        #     df = pd.read_csv(paths)
             
-            for (idx, row) in df.iterrows():
-                data_slice = Slice(row.index, row)
-                self.onData(data_slice)
+        #     for (idx, row) in df.iterrows():
+        #         data_slice = Slice(row.index, row)
+        #         self.on_data(data_slice)
