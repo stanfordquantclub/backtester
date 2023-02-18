@@ -78,19 +78,23 @@ class Engine:
             return data_paths
 
     def on_data(self, data: Slice):
-        # for day in self.schedule()   
-        #     for second in 
+        """
+        Method is to be overriden by subclass
+        
+        Args:
+            data (Slice): data slice of the csv data
+        """
         pass
 
     def run(self):
         self.initialize_defaults()
         self.initialize()
         
-        # data_paths = self.get_data_paths()
+        data_paths = self.get_data_paths()
         
-        # for paths in data_paths:
-        #     df = pd.read_csv(paths)
+        for paths in data_paths:
+            df = pd.read_csv(paths)
             
-        #     for (idx, row) in df.iterrows():
-        #         data_slice = Slice(row.index, row)
-        #         self.on_data(data_slice)
+            for (idx, row) in df.iterrows():
+                data_slice = Slice(row.index, row)
+                self.on_data(data_slice)

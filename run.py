@@ -27,7 +27,7 @@ class CustomEngine(Engine):
         print("Custom Initialize Engine")
         pass
     
-    def on_date(self, data: Slice):
+    def on_data(self, data: Slice):
         print("Custom Date")
         pass
 
