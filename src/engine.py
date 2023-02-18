@@ -93,3 +93,6 @@ class Engine:
             for (idx, row) in df.iterrows():
                 data_slice = Slice(row.index, row)
                 self.on_data(data_slice)
+
+    def sharpe_ratio(self):
+        pass
