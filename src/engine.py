@@ -2,13 +2,8 @@ import pandas_market_calendars as mcal
 from datetime import date
 import pytz
 import glob
+from utils import Slice
 import pandas as pd
-
-class Slice:
-    def __init__(self, data_header, data):
-        self.data_header = data_header
-        self.data = data
-
 class Engine: 
     def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
         """
@@ -86,7 +81,7 @@ class Engine:
         """
         pass
 
-    def run(self):
+    def back_test(self):
         self.initialize_defaults()
         self.initialize()
         

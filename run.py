@@ -3,17 +3,14 @@ from src.engine import Engine
 from src.utils import Slice
 from src.create_candles import create_candles
 
-start_time = time(9, 30, 0)
-end_time = time(16, 0, 0)
-
 # create_candles(
 #   'Data/SPY.P390.20230109.csv',
 #   output_path="Data/",
-#   start_time=start_time, 
-#   end_time=end_time
+#   start_time=time(9, 30, 0), 
+#   end_time=time(16, 0, 0)
 # )
 
-class CustomEngine(Engine):
+class CustomModel(Engine):
     def initialize(self):
         self.security_name = "SPY"
         
@@ -31,8 +28,5 @@ class CustomEngine(Engine):
         print("Custom Date")
         pass
 
-test_engine = Engine()
-custom_engine = CustomEngine()
-
-test_engine.run()
-custom_engine.run()
+model = CustomModel()
+model.back_test()
