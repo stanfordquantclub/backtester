@@ -37,18 +37,11 @@ class OptionContract:
         self.strike = int(properties[2][1:])
         self.expiration = datetime.strptime(properties[3], '%Y%m%d').strftime('%m/%d/%Y')
 
-    def get_line_number(self):
-        open_time = time(9, 30, 0)
-        seconds = (self.time.time.hour - 9) * 3600 
-        pass
-
-    def load(self):
-        pass
-
     def getAskPrice(self):
+        line = self.time.seconds_elapsed + 1
         with open(self.path) as f_input:
-            for row in islice(f_input, N-1, N+X):
-                print(row.strip())
+            for row in islice(f_input, line, line + 1):
+                return row
     
 class DailyOptionChain:
     def __init__(self, asset:str, paths: str, trade_date:date, time:date) -> None:
@@ -186,8 +179,6 @@ class Engine:
                 self.on_data(data)
                 self.time.increment()
                 
-                return
-        
         # for day in options_chains:
         #     self.time = day
         #     chains = options_chains[day]

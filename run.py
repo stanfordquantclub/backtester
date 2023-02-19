@@ -2,6 +2,7 @@ from datetime import date, time, datetime, timedelta
 from src.engine import Engine
 from src.engine import Slice
 from src.create_candles import create_candles
+import time as execution_time
 
 # create_candles(
 #   'Data/SPY.P390.20230109.csv',
@@ -28,12 +29,15 @@ class CustomModel(Engine):
         chain = data.get_chain("SPY")
         contracts = chain.get_contracts()
         
-        contract_time = contracts[0].time
+        contract = contracts[0]
+        contract_time = contract.time
         
         # open_time = time(9, 30, 0)
         
         # print(contract_time, open_time, contract_time.time() - open_time)
-        print(contract_time.time, contract_time.seconds_elapsed)
+        t1 = execution_time.time()
+        contract.getAskPrice()
+        print(execution_time.time() - t1, contract_time.time)
         
         # print(self.time.time)
         # for contract in contracts:
