@@ -26,8 +26,9 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
     start_index = 0
     
     # Convert to milliseconds
+    start_time_increment = (datetime.combine(date.today(), start_time) + timedelta(seconds=1)).time() # one second ahead
     start_time = int(start_time.strftime("%H%M%S")) * 1000
-    current_time = start_time
+    current_time = int(start_time_increment.strftime("%H%M%S")) * 1000
     
     # Add 1 second to end time to include the last second
     end_time = (datetime.combine(date.today(), end_time) + timedelta(seconds=1)).time()
@@ -74,16 +75,19 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
                     
                     candles.append(candle)
                     candle_has_data = False
+                else:
+                    candles.append(candles[-1].copy())
+                    candles[-1][2] = current_time
                 
                 # Increment to the next minute
                 if (current_time/1000) % 100 == 59:
                     current_time += 41000
+                    
+                    # Increment to the next hour
+                    if (current_time/100000) % 100 == 60:
+                        current_time += 4000000
                 else:
                     current_time += 1000
-                    
-                # Increment to the next hour
-                if (current_time/100000) % 100 == 60:
-                    current_time += 4000000
                     
                 if row["Timestamp"] < current_time:
                     if not candle_has_data:
