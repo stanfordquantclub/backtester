@@ -28,9 +28,16 @@ class CustomModel(Engine):
         chain = data.get_chain("SPY")
         contracts = chain.get_contracts()
         
-        for contract in contracts:
-            print(contract.asset, contract.type, contract.strike)
-
+        contract_time = contracts[0].time
+        
+        # open_time = time(9, 30, 0)
+        
+        # print(contract_time, open_time, contract_time.time() - open_time)
+        print(contract_time.time, contract_time.seconds_elapsed)
+        
+        # print(self.time.time)
+        # for contract in contracts:
+        #     print(contract.asset, contract.type, contract.strike)
 
 model = CustomModel()
 model.back_test()
