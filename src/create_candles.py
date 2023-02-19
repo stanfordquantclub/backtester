@@ -82,12 +82,12 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
                 # Increment to the next minute
                 if (current_time/1000) % 100 == 59:
                     current_time += 41000
+                    
+                    # Increment to the next hour
+                    if (current_time/100000) % 100 == 60:
+                        current_time += 4000000
                 else:
                     current_time += 1000
-                    
-                # Increment to the next hour
-                if (current_time/100000) % 100 == 60:
-                    current_time += 4000000
                     
                 if row["Timestamp"] < current_time:
                     if not candle_has_data:
