@@ -1,9 +1,66 @@
 import pandas_market_calendars as mcal
-from datetime import date
+from datetime import date, datetime
 import pytz
 import glob
-from src.utils import Slice
 import pandas as pd
+from itertools import islice
+from collections import OrderedDict
+import os
+from enum import Enum
+
+class Options:
+    CALL = 0
+    PUT = 1
+
+class Slice:
+    """
+    This class formats row data from the csv. Used by the on_data method in 
+    Engine to pass data to the strategy.
+    """
+    def __init__(self):
+        self.chains = {}
+        
+    def add_chain(self, asset_name, chain):
+        self.chains[asset_name] = chain
+        
+    def get_chain(self, asset_name):
+        return self.chains[asset_name]
+        
+class OptionContract:
+    def __init__(self, path) -> None:
+        self.path = path
+        
+        properties = os.path.basename(path).split(".")
+        self.asset = properties[1]
+        self.type = Options.CALL if properties[2][0] == "C" else Options.PUT
+        self.strike = int(properties[2][1:])
+        self.expiration = datetime.strptime(properties[3], '%Y%m%d').strftime('%m/%d/%Y')
+
+    def load(self):
+        pass
+
+    def getAskPrice():
+        pass
+    
+class DailyOptionChain:
+    def __init__(self, asset:str, paths: str, trade_date:date) -> None:
+        self.asset = asset
+        self.paths = paths # list of expirations paths
+        self.trade_date = trade_date
+        self.contracts = []
+        
+    def load_contracts(self):
+        for expiration_path in self.paths:
+            contract_paths = glob.glob(expiration_path + "/Candles*.csv")
+            
+            for contract_path in contract_paths:
+                contract = OptionContract(contract_path)
+                self.contracts.append(contract)
+        
+    def get_contracts(self):
+        if len(self.contracts) == 0:
+            self.load_contracts()
+        return self.contracts
 
 class Engine: 
     def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
@@ -20,6 +77,9 @@ class Engine:
         """
         print("Initialize Defaults")
         
+        self.portfolio = {}
+        self.time = None
+        self.start_cash = start_cash
         self.security_name = security_name
         
         self.start_date = start_date
@@ -30,8 +90,6 @@ class Engine:
         self.root_path = root_path
         self.timezone = timezone
 
-        self.start_cash = start_cash
-    
     def initialize(self):
         """
         Method is to be overriden by subclass
@@ -39,7 +97,7 @@ class Engine:
         print("Initialize Engine")
         pass
 
-    def get_data_paths(self):
+    def get_chains(self):
         """
         Get's the data paths for the backtest
         
@@ -56,7 +114,7 @@ class Engine:
             return self.path_dates
         
         if self.start_date and self.end_date:
-            data_paths = []
+            option_chains = OrderedDict()
 
             nyse = mcal.get_calendar('NYSE')
             
@@ -66,16 +124,13 @@ class Engine:
             schedule["market_close"] = schedule["market_close"].dt.tz_convert(pytz.timezone(self.timezone))
 
             for day, (open_date, close_date) in schedule.iterrows():
-                data_path = f"{self.root_path}/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/{self.security_name}/*/*"
+                # All the expirations within the day
+                data_path = f"{self.root_path}/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/{self.security_name}/*"
+                expirations = glob.glob(data_path)
 
-                data_path_contracts = glob.glob(data_path)
-                print(data_path_contracts)
-                if self.filter_paths:
-                    data_path_contracts = [contract for contract in data_path_contracts if self.filter_paths in contract] 
+                option_chains[open_date] = [DailyOptionChain(self.security_name, expirations, open_date)]
 
-                data_paths.extend(data_path_contracts)
-
-            return data_paths
+            return option_chains
         
     def on_data(self, data: Slice):
         """
@@ -90,12 +145,25 @@ class Engine:
         self.initialize_defaults()
         self.initialize()
         
-        data_paths = self.get_data_paths()
+        options_chains = self.get_chains()
         
-        return
-        for paths in data_paths:
-            df = pd.read_csv(paths)
+        # print(options_chains)
+        
+        for day in options_chains:
+            self.time = day
+            chains = options_chains[day]
             
-            for (idx, row) in df.iterrows():
-                data_slice = Slice(row.index, row)
-                self.on_data(data_slice)
+            data = Slice()
+            
+            for chain in chains:
+                data.add_chain(chain.asset, chain)
+                
+            self.on_data(data)
+                
+        # for paths in options_chains:
+        #     self.time = 
+        #     df = pd.read_csv(paths)
+            
+        #     for (idx, row) in df.iterrows():
+        #         data_slice = Slice(row.index, row)
+        #         self.on_data(data_slice)

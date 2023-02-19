@@ -1,6 +1,6 @@
 from datetime import date, time, datetime, timedelta
 from src.engine import Engine
-from src.utils import Slice
+from src.engine import Slice
 from src.create_candles import create_candles
 
 # create_candles(
@@ -15,7 +15,7 @@ class CustomModel(Engine):
         self.security_name = "SPY"
         
         self.start_date = date(2022, 12, 1)
-        self.end_date = date(2022, 12, 18)
+        self.end_date = date(2022, 12, 1)
         
         self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
         self.start_cash = 10**6
@@ -25,7 +25,12 @@ class CustomModel(Engine):
         pass
     
     def on_data(self, data: Slice):
-        pass
+        chain = data.get_chain("SPY")
+        contracts = chain.get_contracts()
+        
+        for contract in contracts:
+            print(contract.asset, contract.type, contract.strike)
+
 
 model = CustomModel()
 model.back_test()
