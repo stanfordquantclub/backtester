@@ -30,14 +30,19 @@ class CustomModel(Engine):
         contracts = chain.get_contracts()
         
         contract = contracts[0]
-        contract_time = contract.time
         
         # open_time = time(9, 30, 0)
         
         # print(contract_time, open_time, contract_time.time() - open_time)
         t1 = execution_time.time()
-        contract.getAskPrice()
-        print(execution_time.time() - t1, contract_time.time)
+        # row = contract.get_ask_price()
+        # t1 = execution_time.time() - t1
+        
+        t2 = execution_time.time()
+        row = contract.get_ask_price_df()
+        t2 = execution_time.time() - t2
+
+        print(contract.get_time(), contract.get_seconds_elapsed(), t1, t2, row["AskMin"])
         
         # print(self.time.time)
         # for contract in contracts:
