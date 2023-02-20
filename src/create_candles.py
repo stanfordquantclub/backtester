@@ -6,6 +6,7 @@ from datetime import date, time, datetime, timedelta
 import pandas_market_calendars as mcal
 import glob
 import pytz
+from tqdm import tqdm
 
 def create_candles_day(asset: str, day_path: str, output_path: str, timezone:str="US/Eastern"):
     """
@@ -30,9 +31,7 @@ def create_candles_day(asset: str, day_path: str, output_path: str, timezone:str
     open_time = schedule["market_open"].iloc[0].time()
     close_time = schedule["market_close"].iloc[0].time()
     
-    print(open_time, close_time)
-    
-    for contract_path in glob.glob(f"{day_path}/{asset}*.csv"):
+    for contract_path in tqdm(glob.glob(f"{day_path}/{asset}*.csv")):
         print(contract_path)
         create_candles(
             contract_path, 
