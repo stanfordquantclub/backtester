@@ -3,6 +3,20 @@ from tqdm import tqdm
 import os
 import numpy as np
 from datetime import date, time, datetime, timedelta
+import pandas_market_calendars as mcal
+
+def create_candles_day(day_paths: str, output_path: str):
+    """
+    Creates the candles for every contract within a day
+    """
+
+    nyse = mcal.get_calendar('NYSE')
+    
+    schedule = nyse.schedule(self.start_date, self.end_date)
+            
+    for day_path in day_paths:
+        print(day_path)
+        create_candles(day_path, output_path=output_path)
 
 def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=time(16, 0, 0)):
     """
@@ -76,8 +90,9 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
                     candles.append(candle)
                     candle_has_data = False
                 else:
-                    candles.append(candles[-1].copy())
-                    candles[-1][2] = current_time
+                    if len(candles):
+                        candles.append(candles[-1].copy())
+                        candles[-1][2] = current_time
                 
                 # Increment to the next minute
                 if (current_time/1000) % 100 == 59:
@@ -93,6 +108,15 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
                     if not candle_has_data:
                         start_index = index
                         candle_has_data = True
+                        
+    if current_time != end_time:
+        end_time = 
+        for i in range(current_time, end_time, 1000):
+            if i < end_time:
+                candles.append(candles[-1].copy())
+                candles[-1][2] = i
+            else:
+                break
                 
     df = pd.DataFrame(candles, columns=['Date', 'ExpirationDate', 'Timestamp', 'VolumeTrade', 'QuantityBidMin', 'QuantityBidMax', 'QuantityAskMin', 'QuantityAskMax', 'BidMin', 'BidMax', 'AskMin', 'AskMax'])
     df.to_csv(os.path.join(output_path, "Candles." + os.path.basename(file_path)), encoding='utf-8', index=False)
