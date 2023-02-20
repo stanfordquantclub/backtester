@@ -11,10 +11,11 @@ create_candles(
   end_time=time(16, 0, 0)
 )
 
-# day_paths = glob.glob("/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221201/S/SPY/SPY.20221201/SPY*.csv")
+# day_path = "/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221201/S/SPY/SPY.20221201"
 
 # create_candles_day(
-#     day_paths=day_paths,
+#     asset="SPY",
+#     day_path=day_path,
 #     output_path="/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221201/S/SPY/SPY.20221201/"
 # )
 

@@ -4,19 +4,42 @@ import os
 import numpy as np
 from datetime import date, time, datetime, timedelta
 import pandas_market_calendars as mcal
+import glob
+import pytz
 
-def create_candles_day(day_paths: str, output_path: str):
+def create_candles_day(asset: str, day_path: str, output_path: str, timezone:str="US/Eastern"):
     """
     Creates the candles for every contract within a day
+    
+    Args:
+        asset (str): name of the asset
+        day_path (str): path to the day
+        output_path (str): path to the output
+        timezone (str): timezone to use for the candles
     """
 
     nyse = mcal.get_calendar('NYSE')
     
-    schedule = nyse.schedule(self.start_date, self.end_date)
-            
-    for day_path in day_paths:
-        print(day_path)
-        create_candles(day_path, output_path=output_path)
+    index = day_path.split("/").index("us-options-tanq")
+    day = day_path.split("/")[index+2]
+    schedule = nyse.schedule(day, day)
+    
+    schedule["market_open"] = schedule["market_open"].dt.tz_convert(pytz.timezone(timezone))
+    schedule["market_close"] = schedule["market_close"].dt.tz_convert(pytz.timezone(timezone))
+    
+    open_time = schedule["market_open"].iloc[0].time()
+    close_time = schedule["market_close"].iloc[0].time()
+    
+    print(open_time, close_time)
+    
+    for contract_path in glob.glob(f"{day_path}/{asset}*.csv"):
+        print(contract_path)
+        create_candles(
+            contract_path, 
+            output_path=output_path,
+            start_time=open_time, 
+            end_time=close_time
+        )
 
 def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=time(16, 0, 0)):
     """
@@ -110,13 +133,19 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
                         candle_has_data = True
                         
     if current_time != end_time:
-        end_time = 
-        for i in range(current_time, end_time, 1000):
-            if i < end_time:
-                candles.append(candles[-1].copy())
-                candles[-1][2] = i
+        while current_time < end_time:
+            candles.append(candles[-1].copy())
+            candles[-1][2] = current_time
+
+            # Increment to the next minute
+            if (current_time/1000) % 100 == 59:
+                current_time += 41000
+                
+                # Increment to the next hour
+                if (current_time/100000) % 100 == 60:
+                    current_time += 4000000
             else:
-                break
+                current_time += 1000
                 
     df = pd.DataFrame(candles, columns=['Date', 'ExpirationDate', 'Timestamp', 'VolumeTrade', 'QuantityBidMin', 'QuantityBidMax', 'QuantityAskMin', 'QuantityAskMax', 'BidMin', 'BidMax', 'AskMin', 'AskMax'])
     df.to_csv(os.path.join(output_path, "Candles." + os.path.basename(file_path)), encoding='utf-8', index=False)
