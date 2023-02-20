@@ -6,8 +6,10 @@ from datetime import date, time, datetime, timedelta
 import pandas_market_calendars as mcal
 import glob
 import pytz
+import multiprocessing
+import numpy as np
 
-def create_candles_day(asset: str, day_path: str, output_path: str, timezone:str="US/Eastern"):
+def create_candles_day(asset: str, day_path: str, output_path: str, timezone:str="US/Eastern", processes=1):
     """
     Creates the candles for every contract within a day
     
@@ -17,6 +19,16 @@ def create_candles_day(asset: str, day_path: str, output_path: str, timezone:str
         output_path (str): path to the output
         timezone (str): timezone to use for the candles
     """
+    
+    def create_candles_day_paths(contract_paths, output_path, open_time, close_time):
+        for contract_path in contract_paths:
+            print(contract_path)
+            create_candles(
+                contract_path, 
+                output_path=output_path,
+                start_time=open_time, 
+                end_time=close_time
+            )
 
     nyse = mcal.get_calendar('NYSE')
     
@@ -30,17 +42,14 @@ def create_candles_day(asset: str, day_path: str, output_path: str, timezone:str
     open_time = schedule["market_open"].iloc[0].time()
     close_time = schedule["market_close"].iloc[0].time()
     
-    print(open_time, close_time)
+    contract_paths = glob.glob(f"{day_path}/{asset}*.csv")
+    contract_paths = np.array_split(contract_paths, processes)
     
-    for contract_path in glob.glob(f"{day_path}/{asset}*.csv"):
-        print(contract_path)
-        create_candles(
-            contract_path, 
-            output_path=output_path,
-            start_time=open_time, 
-            end_time=close_time
-        )
-
+    for process_index in range(processes):
+        process = multiprocessing.Process(target=create_candles_day_paths, args=(contract_paths[process_index], output_path, open_time, close_time))
+ 
+        process.start()
+        
 def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=time(16, 0, 0)):
     """
     Description:

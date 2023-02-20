@@ -4,19 +4,20 @@ from src.utils import Slice
 from src.create_candles import *
 import glob
 
-create_candles(
-  'Data/SPY.C439.20221201.csv',
-  output_path="Data/",
-  start_time=time(9, 30, 0), 
-  end_time=time(16, 0, 0)
-)
+# create_candles(
+#   'Data/SPY.C439.20221201.csv',
+#   output_path="Data/",
+#   start_time=time(9, 30, 0), 
+#   end_time=time(16, 0, 0)
+# )
 
 # day_path = "/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221201/S/SPY/SPY.20221201"
 
 # create_candles_day(
 #     asset="SPY",
 #     day_path=day_path,
-#     output_path="/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221201/S/SPY/SPY.20221201/"
+#     output_path="/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221201/S/SPY/SPY.20221201/",
+#     processes=2
 # )
 
 # class CustomModel(Engine):
