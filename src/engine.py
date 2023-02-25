@@ -6,84 +6,8 @@ import pandas as pd
 from itertools import islice
 from collections import OrderedDict
 import os
-from enum import Enum
+from src.options import *
 
-class Options:
-    CALL = 0
-    PUT = 1
-
-class Slice:
-    """
-    This class formats row data from the csv. Used by the on_data method in 
-    Engine to pass data to the strategy.
-    """
-    def __init__(self) -> None:
-        self.chains = {}
-        
-    def add_chain(self, asset_name, chain):
-        self.chains[asset_name] = chain
-        
-    def get_chain(self, asset_name):
-        return self.chains[asset_name]
-        
-class OptionContract:
-    def __init__(self, path, time) -> None:
-        self.path = path
-        self.time = time
-        self.df = None
-        
-        properties = os.path.basename(path).split(".")
-        self.asset = properties[1]
-        self.type = Options.CALL if properties[2][0] == "C" else Options.PUT
-        self.strike = int(properties[2][1:])
-        self.expiration = datetime.strptime(properties[3], '%Y%m%d').strftime('%m/%d/%Y')
-
-    def load_df(self):
-        if self.df is None:
-            self.df = pd.read_csv(self.path)
-
-    def get_ask_price(self):
-        line = self.time.seconds_elapsed + 1
-        with open(self.path) as f_input:
-            for row in islice(f_input, line, line + 1):
-                return row
-            
-    def get_ask_price_df(self):
-        if self.df is None:
-            self.load_df()
-        return self.df.iloc[self.time.seconds_elapsed]
-    
-    def get_time(self):
-        return self.time.time
-    
-    def get_seconds_elapsed(self):
-        return self.time.seconds_elapsed
-    
-class DailyOptionChain:
-    def __init__(self, asset:str, paths: str, trade_date:date, time:date) -> None:
-        self.asset = asset
-        self.paths = paths # list of expirations paths
-        self.trade_date = trade_date
-        self.contracts = None
-        self.time = time
-        
-    def load_contracts(self):
-        self.contracts = []
-        for expiration_path in self.paths:
-            contract_paths = glob.glob(expiration_path + "/Candles*.csv")
-            
-            for contract_path in contract_paths:
-                contract = OptionContract(contract_path, self.time)
-                self.contracts.append(contract)
-        
-    def get_contracts(self):
-        if self.contracts is None:
-            self.load_contracts()
-        return self.contracts
-    
-    def set_filter(self, strike_min, strike_max, expiration_min, expiration_max):
-        pass
-    
 class BacktestTime:
     def __init__(self, new_time:datetime) -> None:
         self.time = new_time
@@ -95,6 +19,12 @@ class BacktestTime:
     def increment(self):
         self.time += timedelta(seconds=1)
         self.seconds_elapsed += 1
+        
+    def get_time(self):
+        return self.time
+        
+    def get_seconds_elapsed(self):
+        return self.seconds_elapsed
 
 class Engine: 
     def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
@@ -132,6 +62,9 @@ class Engine:
         print("Initialize Engine")
         pass
 
+    def get_time(self):
+        return self.time.time
+    
     def get_chains(self):
         """
         Get's the data paths for the backtest
@@ -184,39 +117,19 @@ class Engine:
         
         options_chains = self.get_chains()
         
-        # print(options_chains)
-        
         for open_date, close_date in self.schedule:
-            open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 0, 0)
+            open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
             self.time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
 
-            chains = options_chains[open_date]
+            chains = options_chains[open_date] # chains get redefined every day (old chains are deleted through garbage collection)
             data = Slice()
             
             # Iterate through each asset options chain at the current date
             for chain in chains:
                 data.add_chain(chain.asset, chain)
         
-            while self.time.time <= close_date:
+            while self.get_time() <= close_date:
                 self.on_data(data)
                 
                 self.time.increment()
                 
-        # for day in options_chains:
-        #     self.time = day
-        #     chains = options_chains[day]
-            
-        #     data = Slice()
-            
-        #     for chain in chains:
-        #         data.add_chain(chain.asset, chain)
-                
-        #     self.on_data(data)
-                
-        # for paths in options_chains:
-        #     self.time = 
-        #     df = pd.read_csv(paths)
-            
-        #     for (idx, row) in df.iterrows():
-        #         data_slice = Slice(row.index, row)
-        #         self.on_data(data_slice)
