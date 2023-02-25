@@ -89,7 +89,7 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
             else:
                 if candle_has_data:
                     candle_data = df.loc[start_index:index-1]
-                    candle = [row["Date"], row["ExpirationDate"], current_time]
+                    candle = [current_time]
 
                     # Sum up the trade volume
                     candle.append(candle_data[candle_data["Action"] == "T"]["Quantity"].sum())
@@ -156,5 +156,5 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
             else:
                 current_time += 1000
                 
-    df = pd.DataFrame(candles, columns=['Date', 'ExpirationDate', 'Timestamp', 'VolumeTrade', 'QuantityBidMin', 'QuantityBidMax', 'QuantityAskMin', 'QuantityAskMax', 'BidMin', 'BidMax', 'AskMin', 'AskMax'])
+    df = pd.DataFrame(candles, columns=['Timestamp', 'VolumeTrade', 'QuantityBidMin', 'QuantityBidMax', 'QuantityAskMin', 'QuantityAskMax', 'BidMin', 'BidMax', 'AskMin', 'AskMax'])
     df.to_csv(os.path.join(output_path, "Candles." + os.path.basename(file_path)), encoding='utf-8', index=False)
