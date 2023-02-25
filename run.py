@@ -38,27 +38,11 @@ class CustomModel(Engine):
         contracts = chain.get_contracts()
         
         contract = contracts[0]
-        # open_time = time(9, 30, 0)
         
-        # print(contract_time, open_time, contract_time.time() - open_time)
-        # t1 = execution_time.time()
         # row = contract.get_ask_price()
-        # t1 = execution_time.time() - t1
+        # row = contract.get_ask_price_df()
         
-        # print(contract.get_time(), contract.get_seconds_elapsed(), contract)
-        # t2 = execution_time.time()
-        row = contract.get_ask_price_df()
-        # t2 = execution_time.time() - t2
-        
-        print(contract.get_time(), contract.get_seconds_elapsed(), row["AskMin"])
-
-        # print(contract.get_time(), contract.get_seconds_elapsed(), t1, t2, row["AskMin"])
-        # print(contract.df.iloc[23399]["AskMin"])
-        # print(len(contract.df))
-        # print()
-        # print(self.time.time)
-        # for contract in contracts:
-        #     print(contract.asset, contract.type, contract.strike)
+        # print(contract.get_time(), contract.get_seconds_elapsed(), row["AskMin"])
 
 model = CustomModel()
 model.back_test()
