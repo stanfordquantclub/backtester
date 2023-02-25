@@ -35,6 +35,11 @@ class OptionContract:
         self.asset = properties[1]
         self.type = Options.CALL if properties[2][0] == "C" else Options.PUT
         self.strike = int(properties[2][1:])
+        
+        if len(properties) == 6: # handles cases where strike has a decimal (cents)
+            self.strike += int(properties[3]) / 10**len(properties[3])
+            del properties[3]
+                    
         self.expiration = datetime.strptime(properties[3], '%Y%m%d').strftime('%m/%d/%Y')
 
     def load_df(self):

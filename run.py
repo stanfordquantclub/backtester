@@ -12,12 +12,12 @@ from src.engine import Slice
 #   end_time=time(16, 0, 0)
 # )
 
-# day_path = "/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221201/S/SPY/SPY.20221201"
+# day_path = "/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221202/S/SPY/SPY.20221202"
 
 # create_candles_day(
 #     asset="SPY",
 #     day_path=day_path,
-#     output_path="/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221201/S/SPY/SPY.20221201/",
+#     output_path=day_path,
 #     processes=2
 # )
 
@@ -26,7 +26,7 @@ class CustomModel(Engine):
         self.security_name = "SPY"
         
         self.start_date = date(2022, 12, 1)
-        self.end_date = date(2022, 12, 1)
+        self.end_date = date(2022, 12, 2)
         
         self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
         self.start_cash = 10**6
@@ -46,3 +46,4 @@ class CustomModel(Engine):
         # print(contract.get_time(), contract.get_seconds_elapsed(), row["AskMin"])
 
 model = CustomModel()
+model.back_test()

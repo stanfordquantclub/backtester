@@ -25,6 +25,9 @@ class BacktestTime:
         
     def get_seconds_elapsed(self):
         return self.seconds_elapsed
+    
+    def reset_seconds_elapsed(self):
+        self.seconds_elapsed = 0
 
 class Engine: 
     def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
@@ -64,6 +67,9 @@ class Engine:
 
     def get_time(self):
         return self.time.time
+    
+    def get_seconds_elapsed(self):
+        return self.time.seconds_elapsed
     
     def get_chains(self):
         """
@@ -120,7 +126,8 @@ class Engine:
         for open_date, close_date in self.schedule:
             open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
             self.time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
-
+            self.time.reset_seconds_elapsed()
+            
             chains = options_chains[open_date] # chains get redefined every day (old chains are deleted through garbage collection)
             data = Slice()
             
