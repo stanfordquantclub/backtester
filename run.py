@@ -17,7 +17,8 @@ from src.engine import Slice
 # create_candles_day(
 #     asset="SPY",
 #     day_path=day_path,
-#     output_path="/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221201/S/SPY/SPY.20221201/"
+#     output_path="/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221201/S/SPY/SPY.20221201/",
+#     processes=2
 # )
 
 class CustomModel(Engine):
@@ -45,4 +46,3 @@ class CustomModel(Engine):
         # print(contract.get_time(), contract.get_seconds_elapsed(), row["AskMin"])
 
 model = CustomModel()
-model.back_test()
