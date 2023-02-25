@@ -1,8 +1,9 @@
 from datetime import date, time, datetime, timedelta
 from src.engine import Engine
-from src.utils import Slice
 from src.create_candles import *
 import glob
+import time as execution_time
+from src.engine import Slice
 
 # create_candles(
 #   'Data/SPY.C439.20221201.csv',
@@ -20,23 +21,28 @@ import glob
 #     processes=2
 # )
 
-# class CustomModel(Engine):
-#     def initialize(self):
-#         self.security_name = "SPY"
+class CustomModel(Engine):
+    def initialize(self):
+        self.security_name = "SPY"
         
-#         self.start_date = date(2022, 12, 1)
-#         self.end_date = date(2022, 12, 18)
+        self.start_date = date(2022, 12, 1)
+        self.end_date = date(2022, 12, 1)
         
-#         self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
-#         self.start_cash = 10**6
+        self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
+        self.start_cash = 10**6
         
-#         print(self.start_date.strftime("%Y%m%d"))
-#         print("Custom Initialize Engine")
-#         pass
+        print(self.start_date.strftime("%Y%m%d"))
+        print("Custom Initialize Engine")
     
-#     def on_data(self, data: Slice):
-#         print("Custom Date")
-#         pass
+    def on_data(self, data: Slice):
+        chain = data.get_chain("SPY")
+        contracts = chain.get_contracts()
+        
+        contract = contracts[0]
+        
+        # row = contract.get_ask_price()
+        # row = contract.get_ask_price_df()
+        
+        # print(contract.get_time(), contract.get_seconds_elapsed(), row["AskMin"])
 
-# model = CustomModel()
-# model.back_test()
+model = CustomModel()

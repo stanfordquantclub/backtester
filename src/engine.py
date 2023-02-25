@@ -1,23 +1,50 @@
 import pandas_market_calendars as mcal
-from datetime import date
+from datetime import date, datetime, time, timedelta
 import pytz
 import glob
-from src.utils import Slice
 import pandas as pd
+from itertools import islice
+from collections import OrderedDict
+import os
+from src.options import *
+
+class BacktestTime:
+    def __init__(self, new_time:datetime) -> None:
+        self.time = new_time
+        self.seconds_elapsed = 0
+        
+    def set_time(self, new_time:datetime):
+        self.time = new_time
+
+    def increment(self):
+        self.time += timedelta(seconds=1)
+        self.seconds_elapsed += 1
+        
+    def get_time(self):
+        return self.time
+        
+    def get_seconds_elapsed(self):
+        return self.seconds_elapsed
 
 class Engine: 
     def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
         """
+        Initialize the defaults for the engine
+
         Args:
             security_name (str): name of the security to backtest
             start_date (date): start date of the backtest
             end_date (date): end date of the backtest
             path_dates (list[str]): list of paths to use for the backtest - if this is used, start_date and end_date are ignored
             filter (str): filter to use when generating paths within the start_date and end_date or path_dates
-            start_cash (float): starting cash for the backtest
+            
         """
         print("Initialize Defaults")
         
+        self.portfolio = {}
+        self.time = BacktestTime(None)
+        self.schedule = []
+        self.start_cash = start_cash
         self.security_name = security_name
         
         self.start_date = start_date
@@ -28,8 +55,6 @@ class Engine:
         self.root_path = root_path
         self.timezone = timezone
 
-        self.start_cash = start_cash
-    
     def initialize(self):
         """
         Method is to be overriden by subclass
@@ -37,8 +62,13 @@ class Engine:
         print("Initialize Engine")
         pass
 
-    def get_data_paths(self):
+    def get_time(self):
+        return self.time.time
+    
+    def get_chains(self):
         """
+        Get's the data paths for the backtest
+        
         Args:
             start (date): start date of the backtest
             end (date): end date of the backtest
@@ -52,7 +82,7 @@ class Engine:
             return self.path_dates
         
         if self.start_date and self.end_date:
-            data_paths = []
+            option_chains = OrderedDict()
 
             nyse = mcal.get_calendar('NYSE')
             
@@ -62,17 +92,16 @@ class Engine:
             schedule["market_close"] = schedule["market_close"].dt.tz_convert(pytz.timezone(self.timezone))
 
             for day, (open_date, close_date) in schedule.iterrows():
-                data_path = f"{self.root_path}/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/{self.security_name}/*/*"
+                self.schedule.append([open_date, close_date])
+                # All the expirations within the day
+                data_path = f"{self.root_path}/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/{self.security_name}/*"
+                expirations = glob.glob(data_path)
+                
+                # Put it in array format to expand to multiple assets
+                option_chains[open_date] = [DailyOptionChain(self.security_name, expirations, open_date, self.time)]
 
-                data_path_contracts = glob.glob(data_path)
-                print(data_path_contracts)
-                if self.filter_paths:
-                    data_path_contracts = [contract for contract in data_path_contracts if self.filter_paths in contract] 
-
-                data_paths.extend(data_path_contracts)
-
-            return data_paths
-
+            return option_chains
+        
     def on_data(self, data: Slice):
         """
         Method is to be overriden by subclass
@@ -86,11 +115,21 @@ class Engine:
         self.initialize_defaults()
         self.initialize()
         
-        data_paths = self.get_data_paths()
+        options_chains = self.get_chains()
         
-        for paths in data_paths:
-            df = pd.read_csv(paths)
+        for open_date, close_date in self.schedule:
+            open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
+            self.time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
+
+            chains = options_chains[open_date] # chains get redefined every day (old chains are deleted through garbage collection)
+            data = Slice()
             
-            for (idx, row) in df.iterrows():
-                data_slice = Slice(row.index, row)
-                self.on_data(data_slice)
+            # Iterate through each asset options chain at the current date
+            for chain in chains:
+                data.add_chain(chain.asset, chain)
+        
+            while self.get_time() <= close_date:
+                self.on_data(data)
+                
+                self.time.increment()
+                
