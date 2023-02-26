@@ -43,7 +43,7 @@ class CustomModel(Engine):
         # row = contract.get_ask_price()
         # row = contract.get_ask_price_df()
         
-        # print(contract.get_time(), contract.get_seconds_elapsed(), row["AskMin"])
+        print(contract.get_time(), contract.get_seconds_elapsed(), self.buy(contract, 1), self.sell(contract, 1))
 
 model = CustomModel()
 model.back_test()
