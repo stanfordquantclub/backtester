@@ -20,7 +20,7 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
     """    
     
     df = pd.read_csv(file_path)
-    
+
     candle_has_data = False
     candles = []
     start_index = 0
@@ -28,11 +28,14 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
     # Convert to milliseconds
     start_time = int(start_time.strftime("%H%M%S")) * 1000
     current_time = start_time
-    
+
     # Add 1 second to end time to include the last second
     end_time = (datetime.combine(date.today(), end_time) + timedelta(seconds=1)).time()
     end_time = int(end_time.strftime("%H%M%S")) * 1000
-    
+
+    # FILTER OUT ITEMS FROM PRE-MARKET AND POST-MARKET
+    df = df[(df["Timestamp"] >= start_time) & (df["Timestamp"] <= end_time)]
+
     for index, row in tqdm(df.iterrows(), total=df.shape[0]):
         if row["Timestamp"] >= start_time and row["Timestamp"] <= end_time:
             if row["Timestamp"] < current_time:
@@ -60,6 +63,7 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
                     quantity_ask_max = candle_data[(candle_data["Side"] == "A") & (candle_data["Price"] == ask_max)]["Quantity"].max()
                     
                     metrics = [quantity_bid_min, quantity_bid_max, quantity_ask_min, quantity_ask_max, bid_min, bid_max, ask_min, ask_max]
+                    
                     
                     for metric in metrics:
                         if np.isnan(metric):

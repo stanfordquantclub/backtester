@@ -1,9 +1,13 @@
 import pandas_market_calendars as mcal
+
 from datetime import date
 import pytz
 import glob
 from utils import Slice
 import pandas as pd
+import logs 
+import statistics
+
 class Engine: 
     def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
         """
@@ -26,8 +30,17 @@ class Engine:
         self.filter_paths = filter_paths
         self.root_path = root_path
         self.timezone = timezone
-
         self.start_cash = start_cash
+        self.current_cash = start_cash
+
+        #[[trading_day_1 {file_name: [trade_1 [buy [price, number_of_contracts], sell [price, number_of_contracts] ] ] , file_name}], [trading_day_2 {}], ]
+
+        self.logs = logs()
+        self.trades = []
+        self.sharpe_ratio = 1
+        self.sortino_ratio = 1
+        self.total_return = 0
+        
     
     def initialize(self):
         """
@@ -94,5 +107,38 @@ class Engine:
                 data_slice = Slice(row.index, row)
                 self.on_data(data_slice)
 
+    """
+    gets the total return on the portfolio
+    """
+    def total_return(self):
+        self.total_return =  ((self.current_cash - self.start_cash)/ self.start_cash) * 100
+
+    def calculate_trades(self):
+        ordered_trades = self.logs.get_trades()
+        traded_contracts = list(ordered_trades.keys())
+        
+        
+
+        for contract in traded_contracts:
+            #the trades_made within one contract
+            trades_made = ordered_trades[contract]
+            
+            ind = 0
+            while (len(trades_made != 0)):
+                if (trades_made[ind].get_order_type != trades_made[ind + 1].get_order_type):
+                    self.trades.append((trades_made[ind + 1].get_price_paid() - trades_made[ind].get_price_paid()) / trades_made[ind])
+                    del trades_made[ind]
+                    del trades_made[ind]
+        
+            
     def sharpe_ratio(self):
-        pass
+        standard_dev = statistics.stdev(self.trades)
+        return self.total_return / standard_dev
+    
+    
+        
+                        
+
+
+
+
