@@ -145,7 +145,7 @@ class Engine:
             seconds_elapsed = self.get_seconds_elapsed()
             next_bid_price = contract.get_bid_max_price(seconds_elapsed + 1) * 0.75 + contract.get_bid_min_price(seconds_elapsed + 1) * 0.25
         
-        price = round(max(current_bid_price, next_bid_price), 2)
+        price = round(min(current_bid_price, next_bid_price), 2)
 
         return price        
         
