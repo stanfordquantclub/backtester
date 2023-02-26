@@ -38,7 +38,7 @@ class BacktestTime:
     def reset_seconds_elapsed(self):
         self.seconds_elapsed = 0
 
-class Engine: 
+class Engine:
     def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
         """
         Initialize the defaults for the engine
