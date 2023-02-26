@@ -1,14 +1,5 @@
 import numpy as np
 
-class Slice:
-    """
-    This class formats row data from the csv. Used by the on_data method in 
-    Engine to pass data to the strategy.
-    """
-    def __init__(self, data_header, data):
-        self.data_header = data_header
-        self.data = data
-
 def vel_list(list):
     vel_list = [0]
     for ind in range(len(list) - 1):

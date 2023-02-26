@@ -1,4 +1,6 @@
 Data/*
+*.DS_Store
 *.csv
 *.pyc
-*.DS_Store
+*.vscode
+*.gz
