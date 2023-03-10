@@ -187,3 +187,30 @@ class Engine:
                 self.time.increment()
 
         print("Execution Time: ", execution_time.time() - t1)
+
+    """
+    gets the total return on the portfolio
+    """
+    def total_return(self):
+        self.total_return =  ((self.current_cash - self.start_cash)/ self.start_cash) * 100
+
+    def calculate_trades(self):
+        ordered_trades = self.logs.get_trades()
+        traded_contracts = list(ordered_trades.keys())
+
+
+
+        for contract in traded_contracts:
+            #the trades_made within one contract
+            trades_made = ordered_trades[contract]
+
+            ind = 0
+            while (len(trades_made != 0)):
+                if (trades_made[ind].get_order_type != trades_made[ind + 1].get_order_type):
+                    self.trades.append((trades_made[ind + 1].get_price_paid() - trades_made[ind].get_price_paid()) / trades_made[ind])
+                    del trades_made[ind]
+                    del trades_made[ind]
+
+    def sharpe_ratio(self):
+        standard_dev = statistics.stdev(self.trades)
+        return self.total_return / standard_dev
