@@ -54,5 +54,15 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
                         .rename(columns={"Price A": "PriceAskMax", "Price B": "PriceBidMax", "Quantity A": "QuantityAskMax", "Quantity B": "QuantityBidMax"}))
     
     df_all = pd.merge(df_min_price,df_max_price, left_index=True, right_index=True)
+    
+    df_action_T = df[df['Action'] == 'T']
+    df_volume = (df_action_T.groupby(df_action_T['TimestampSec'])['Quantity']
+                            .sum()
+                            .to_frame()
+                            .reindex(CLOCK_HOURS)
+                            .fillna(method='ffill')
+                            .rename(columns={"Quantity": "Volume"}))
+    
+    df_all = pd.merge(df_all, df_volume, left_index=True, right_index=True)
 
     df_all.to_csv(os.path.join(output_path, "Candles." + os.path.basename(file_path)), encoding='utf-8', index_label='TimestampSec')
