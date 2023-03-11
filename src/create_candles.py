@@ -22,18 +22,19 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
     df = pd.read_csv(file_path)
 
     # Convert to milliseconds
+    start_datetime = datetime.combine(date.today(), start_time)
     start_time = int(start_time.strftime("%H%M%S")) * 1000
 
     # Add 1 second to end time to include the last second
-    end_time = (datetime.combine(date.today(), end_time) + timedelta(seconds=1)).time()
-    end_time = int(end_time.strftime("%H%M%S")) * 1000
+    end_datetime = (datetime.combine(date.today(), end_time) + timedelta(seconds=1))
+    end_time = int(end_datetime.strftime("%H%M%S")) * 1000
 
     # FILTER OUT ITEMS FROM PRE-MARKET AND POST-MARKET
     df["TimestampSec"] = df["Timestamp"] // 1000
     df = df[(df["Timestamp"] >= start_time) & (df["Timestamp"] < end_time)]
-
-
-    CLOCK_HOURS = np.arange(93000,160001)
+    total_seconds = int((end_datetime - start_datetime).total_seconds())
+    
+    CLOCK_HOURS = np.array([int((start_datetime + timedelta(seconds=x)).time().strftime("%H%M%S")) for x in range(0, total_seconds)])
 
     df_min_price =  (df.loc[df.groupby([df['Side'], df['TimestampSec']])['Price'].idxmin()]
                             [['TimestampSec','Side','Price','Quantity']]
