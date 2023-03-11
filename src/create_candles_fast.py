@@ -21,38 +21,38 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
     
     df = pd.read_csv(file_path)
 
-    candle_has_data = False
-    candles = []
-    start_index = 0
-    
     # Convert to milliseconds
     start_time = int(start_time.strftime("%H%M%S")) * 1000
-    current_time = start_time
 
     # Add 1 second to end time to include the last second
     end_time = (datetime.combine(date.today(), end_time) + timedelta(seconds=1)).time()
     end_time = int(end_time.strftime("%H%M%S")) * 1000
 
     # FILTER OUT ITEMS FROM PRE-MARKET AND POST-MARKET
-    df = df[(df["Timestamp"] >= start_time) & (df["Timestamp"] <= end_time)].reset_index()
-
     df["TimestampSec"] = df["Timestamp"] // 1000
+    df = df[(df["Timestamp"] >= start_time) & (df["Timestamp"] < end_time)]
 
-    df_min_price =  (df.iloc[df.groupby([df['Side'], df['TimestampSec']])['Price'].idxmin()]
+
+    CLOCK_HOURS = np.arange(93000,160001)
+
+    df_min_price =  (df.loc[df.groupby([df['Side'], df['TimestampSec']])['Price'].idxmin()]
                             [['TimestampSec','Side','Price','Quantity']]
                         .set_index(['Side', 'TimestampSec'])
-                        .reindex(pd.MultiIndex.from_product([['A','B'], np.arange(93000,160001)]))
+                        .reindex(pd.MultiIndex.from_product([['A','B'], CLOCK_HOURS]))
                         .fillna(method='ffill')
-                        .rename(columns={"Price"}))
+                        .unstack(level=0)
+                        .pipe(lambda d: (setattr(d, 'columns', [' '.join(col).strip() for col in d.columns.values]), d)[1])
+                        .rename(columns={"Price A": "PriceAskMin", "Price B": "PriceBidMin", "Quantity A": "QuantityAskMin", "Quantity B": "QuantityBidMin"}))
     
-    df_max_price =  (df.iloc[df.groupby([df['Side'], df['TimestampSec']])['Price'].idxmax()]
+    df_max_price =  (df.loc[df.groupby([df['Side'], df['TimestampSec']])['Price'].idxmax()]
                             [['TimestampSec','Side','Price','Quantity']]
                         .set_index(['Side', 'TimestampSec'])
-                        .reindex(pd.MultiIndex.from_product([['A','B'], np.arange(93000,160001)]))
-                        .fillna(method='ffill'))
+                        .reindex(pd.MultiIndex.from_product([['A','B'], CLOCK_HOURS]))
+                        .fillna(method='ffill')
+                        .unstack(level=0)
+                        .pipe(lambda d: (setattr(d, 'columns', [' '.join(col).strip() for col in d.columns.values]), d)[1])
+                        .rename(columns={"Price A": "PriceAskMax", "Price B": "PriceBidMax", "Quantity A": "QuantityAskMax", "Quantity B": "QuantityBidMax"}))
     
+    df_all = pd.merge(df_min_price,df_max_price, left_index=True, right_index=True)
 
-    print(df_min_price)
-
-    # df = pd.DataFrame(candles, columns=['Date', 'ExpirationDate', 'Timestamp', 'VolumeTrade', 'QuantityBidMin', 'QuantityBidMax', 'QuantityAskMin', 'QuantityAskMax', 'BidMin', 'BidMax', 'AskMin', 'AskMax'])
-    # df.to_csv(os.path.join(output_path, "Candles." + os.path.basename(file_path)), encoding='utf-8', index=False)
+    df_all.to_csv(os.path.join(output_path, "Candles." + os.path.basename(file_path)), encoding='utf-8', index_label='TimestampSec')
