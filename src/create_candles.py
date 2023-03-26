@@ -22,11 +22,11 @@ def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=t
     df = pd.read_csv(file_path)
 
     # Convert to milliseconds
-    start_datetime = datetime.combine(date.today(), start_time)
+    start_datetime = datetime.combine(date.today(), start_time) + timedelta(seconds=1)
     start_time = int(start_time.strftime("%H%M%S")) * 1000
 
     # Add 1 second to end time to include the last second
-    end_datetime = (datetime.combine(date.today(), end_time) + timedelta(seconds=1))
+    end_datetime = datetime.combine(date.today(), end_time) + timedelta(seconds=1)
     end_time = int(end_datetime.strftime("%H%M%S")) * 1000
 
     # FILTER OUT ITEMS FROM PRE-MARKET AND POST-MARKET
