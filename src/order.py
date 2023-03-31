@@ -18,6 +18,9 @@ class Order:
         #datetime object created from parsing the file path s
         self.date = datetime.datetime(int(contract_name[-12:-8]), int(contract_name[-8:-6]), int(contract_name[-6:-4]))
     
+    def get_date(self):
+        return self.date
+
     def get_contract_name(self):
         return self.contract_name
     

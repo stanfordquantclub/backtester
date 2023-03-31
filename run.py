@@ -28,18 +28,19 @@ class CustomModel(Engine):
         self.start_date = date(2022, 12, 1)
         self.end_date = date(2022, 12, 2)
         
-        self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
+        self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/us-options-tanq"
         self.start_cash = 10**6
         
         print(self.start_date.strftime("%Y%m%d"))
         print("Custom Initialize Engine")
     
     def on_data(self, data: Slice):
+        print("Hello my name is")
         chain = data.get_chain("SPY")
         contracts = chain.get_contracts()
         
         contract = contracts[0]
-        
+    
         # row = contract.get_ask_price()
         # row = contract.get_ask_price_df()
         

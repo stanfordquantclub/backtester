@@ -8,6 +8,9 @@ from collections import OrderedDict
 import os
 from src.options import *
 import time as execution_time
+import statistics
+from src.logs import *
+from src.order import *
 
 class BacktestTime:
     def __init__(self, new_time:datetime, open_time:datetime, close_time:datetime) -> None:
@@ -57,6 +60,7 @@ class Engine:
         self.time = BacktestTime(None, None, None)
         self.schedule = []
         self.start_cash = start_cash
+        self.cash_on_hand = start_cash
         self.security_name = security_name
 
         self.start_date = start_date
@@ -66,6 +70,8 @@ class Engine:
         self.filter_paths = filter_paths
         self.root_path = root_path
         self.timezone = timezone
+        self.logs = Logs()
+        self.order_id = 1
 
     def initialize(self):
         """
@@ -134,9 +140,20 @@ class Engine:
 
         price = round(max(current_ask_price, next_ask_price), 2)
 
+        #insufficient funds to execute given trade
+        if (price * quantity > self.cash_on_hand):
+            return None
+        else:
+            self.cash_on_hand -= (price * quantity)
+
+        new_trade = Order(contract, 1, quantity, price, id)
+        self.order_id += 1
+        self.logs.add_trade(new_trade)
+
+
         return price
 
-    def sell(self, contract:OptionContract, quantity:int)->None:
+    def sell(self, contract:OptionContract, quantity:int, date)->None:
         current_bid_price = contract.get_bid_max_price() * 0.75 + contract.get_bid_min_price() * 0.25
 
         if self.get_time() == self.get_close_time():
@@ -146,6 +163,8 @@ class Engine:
             next_bid_price = contract.get_bid_max_price(seconds_elapsed + 1) * 0.75 + contract.get_bid_min_price(seconds_elapsed + 1) * 0.25
 
         price = round(min(current_bid_price, next_bid_price), 2)
+
+        self.cash_on_hand += (price * quantity)
 
         return price
 
@@ -163,6 +182,7 @@ class Engine:
         self.initialize()
 
         options_chains = self.get_chains()
+        print(options_chains.keys())
 
         t1 = execution_time.time()
 
@@ -197,8 +217,6 @@ class Engine:
     def calculate_trades(self):
         ordered_trades = self.logs.get_trades()
         traded_contracts = list(ordered_trades.keys())
-
-
 
         for contract in traded_contracts:
             #the trades_made within one contract

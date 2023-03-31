@@ -11,6 +11,10 @@ class Logs:
         self.orders_sequential = OrderedDict()
         self.orders_files = OrderedDict()
 
+    def add_trade(self,trade):
+        self.add_sequential(trade.get_date, trade)
+        self.add_orders_files(trade)
+
     def add_sequential(self, day, trade):
         """
         Args: day (datetime obj): what the current date is
@@ -23,7 +27,7 @@ class Logs:
     
     def add_orders_files(self, trade):
         """
-        Args: trade (order obj): order object that holds the trade taht is being added to the log
+        Args: trade (order obj): order object that holds the trade that is being added to the log
         """
         if (trade.get_contract_name() in self.orders_files):
             self.orders_files[trade.get_contract_name()].append(trade)
