@@ -6,6 +6,8 @@ import pandas as pd
 from itertools import islice
 from collections import OrderedDict
 import os
+import logs
+import statistics
 from src.options import *
 import time as execution_time
 import statistics
@@ -72,6 +74,14 @@ class Engine:
         self.timezone = timezone
         self.logs = Logs()
         self.order_id = 1
+
+        #[[trading_day_1 {file_name: [trade_1 [buy [price, number_of_contracts], sell [price, number_of_contracts] ] ] , file_name}], [trading_day_2 {}], ]
+
+        self.logs = logs()
+        self.trades = []
+        self.sharpe_ratio = 1
+        self.sortino_ratio = 1
+        self.total_return = 0
 
     def initialize(self):
         """
@@ -182,7 +192,6 @@ class Engine:
         self.initialize()
 
         options_chains = self.get_chains()
-        print(options_chains.keys())
 
         t1 = execution_time.time()
 
@@ -217,6 +226,8 @@ class Engine:
     def calculate_trades(self):
         ordered_trades = self.logs.get_trades()
         traded_contracts = list(ordered_trades.keys())
+
+
 
         for contract in traded_contracts:
             #the trades_made within one contract

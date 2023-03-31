@@ -88,6 +88,15 @@ class OptionContract:
             
         return self.df.iloc[seconds_elapsed]["AskMax"]
     
+    def get_ask_max_price(self, seconds_elapsed=None):
+        if self.df is None:
+            self.load_df()
+            
+        if seconds_elapsed is None:
+            seconds_elapsed = self.time.seconds_elapsed
+            
+        return self.df.iloc[seconds_elapsed]["AskMax"]
+    
     def get_date(self):
         return self.time.date
 
