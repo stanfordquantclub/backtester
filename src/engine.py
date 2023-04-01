@@ -174,6 +174,9 @@ class Engine:
 
         price = round(min(current_bid_price, next_bid_price), 2)
 
+        new_trade = Order(contract, 0, quantity, price, id)
+        self.order_id += 1
+        self.logs.add_trade(new_trade)
         self.cash_on_hand += (price * quantity)
 
         return price
