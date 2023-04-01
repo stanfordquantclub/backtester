@@ -1,18 +1,17 @@
 import pandas_market_calendars as mcal
-from datetime import date, datetime, time, timedelta
 import pytz
 import glob
 import pandas as pd
 from itertools import islice
 from collections import OrderedDict
 import os
-import logs
 import statistics
 from src.options import *
 import time as execution_time
 import statistics
 from src.logs import *
 from src.order import *
+from datetime import date, datetime, time, timedelta
 
 class BacktestTime:
     def __init__(self, new_time:datetime, open_time:datetime, close_time:datetime) -> None:
@@ -77,7 +76,6 @@ class Engine:
 
         #[[trading_day_1 {file_name: [trade_1 [buy [price, number_of_contracts], sell [price, number_of_contracts] ] ] , file_name}], [trading_day_2 {}], ]
 
-        self.logs = logs()
         self.trades = []
         self.sharpe_ratio = 1
         self.sortino_ratio = 1
@@ -92,6 +90,9 @@ class Engine:
 
     def get_time(self):
         return self.time.time
+    
+    def get_date(self):
+        return self.time.time.date()
 
     def get_open_time(self):
         return self.time.open_time
@@ -139,7 +140,7 @@ class Engine:
 
             return option_chains
 
-    def buy(self, contract:OptionContract, quantity:int)->None:
+    def adjusted_ask(self, contract:OptionContract, quantity:int)->None:
         current_ask_price = contract.get_ask_min_price() * 0.75 + contract.get_ask_max_price() * 0.25
 
         if self.get_time() == self.get_close_time():
@@ -150,20 +151,9 @@ class Engine:
 
         price = round(max(current_ask_price, next_ask_price), 2)
 
-        #insufficient funds to execute given trade
-        if (price * quantity > self.cash_on_hand):
-            return None
-        else:
-            self.cash_on_hand -= (price * quantity)
-
-        new_trade = Order(contract, 1, quantity, price, id)
-        self.order_id += 1
-        self.logs.add_trade(new_trade)
-
-
         return price
 
-    def sell(self, contract:OptionContract, quantity:int, date)->None:
+    def adjusted_bid(self, contract:OptionContract, quantity:int)->None:
         current_bid_price = contract.get_bid_max_price() * 0.75 + contract.get_bid_min_price() * 0.25
 
         if self.get_time() == self.get_close_time():
@@ -174,12 +164,30 @@ class Engine:
 
         price = round(min(current_bid_price, next_bid_price), 2)
 
-        new_trade = Order(contract, 0, quantity, price, id)
+        return price
+    
+    def buy(self, contract:OptionContract, quantity:int):
+        price = self.adjusted_ask(contract, 1)
+
+         #insufficient funds to execute given trade
+        if (price * quantity > self.cash_on_hand):
+            return None
+        else:
+            self.cash_on_hand -= (price * quantity)
+
+        #adding trade to log
+        new_trade = Order(contract, 1, quantity, price, id)
         self.order_id += 1
         self.logs.add_trade(new_trade)
-        self.cash_on_hand += (price * quantity)
 
-        return price
+        #adding what was purchased in trade to portfolio
+
+    def sell(self, contract:OptionContract, quantity:int, date)->None:
+        price = self.adjusted_bid(contract, 1)
+
+        new_trade = Order(contract, 2, quantity, price, id)
+        self.order_id += 1
+        self.logs.add_trade(new_trade)
 
     def on_data(self, data: Slice):
         """
@@ -229,8 +237,6 @@ class Engine:
     def calculate_trades(self):
         ordered_trades = self.logs.get_trades()
         traded_contracts = list(ordered_trades.keys())
-
-
 
         for contract in traded_contracts:
             #the trades_made within one contract
