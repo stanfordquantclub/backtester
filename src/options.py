@@ -98,10 +98,13 @@ class OptionContract:
         return self.df.iloc[seconds_elapsed]["AskMax"]
     
     def get_date(self):
-        return self.time.date
+        return self.time.time.date()
 
     def get_time(self):
         return self.time.time
+    
+    def get_hour(self):
+        return (self.time)
     
     def get_seconds_elapsed(self):
         return self.time.seconds_elapsed

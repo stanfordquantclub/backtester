@@ -4,6 +4,7 @@ from src.create_candles import *
 import glob
 import time as execution_time
 from src.engine import Slice
+from src.portfolio import Portfolio
 
 # create_candles(
 #   'Data/SPY.C439.20221201.csv',
@@ -26,25 +27,26 @@ class CustomModel(Engine):
         self.security_name = "SPY"
         
         self.start_date = date(2022, 12, 1)
-        self.end_date = date(2022, 12, 2)
+        self.end_date = date(2022, 12, 1)
         
         self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/us-options-tanq"
         self.start_cash = 10**6
         
-        print(self.start_date.strftime("%Y%m%d"))
-        print("Custom Initialize Engine")
     
     def on_data(self, data: Slice):
-        print("Hello my name is")
         chain = data.get_chain("SPY")
         contracts = chain.get_contracts()
         
-        contract = contracts[0]
-    
-        # row = contract.get_ask_price()
-        # row = contract.get_ask_price_df()
-        
-        print(contract.get_time(), contract.get_seconds_elapsed(), self.buy(contract, 1), self.sell(contract, 1))
+        contract = contracts[75]
+
+        if (contract.get_seconds_elapsed() == 3600):
+            print(contract.get_date(), contract.get_seconds_elapsed(), self.adjusted_ask(contract, 1), self.adjusted_bid(contract, 1))
+            self.buy(contract, 5)
+
+
 
 model = CustomModel()
 model.back_test()
+
+
+

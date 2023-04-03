@@ -12,6 +12,7 @@ import statistics
 from src.logs import *
 from src.order import *
 from datetime import date, datetime, time, timedelta
+from src.portfolio import Portfolio
 
 class BacktestTime:
     def __init__(self, new_time:datetime, open_time:datetime, close_time:datetime) -> None:
@@ -57,7 +58,7 @@ class Engine:
         """
         print("Initialize Defaults")
 
-        self.portfolio = {}
+        self.portfolio = Portfolio(start_cash)
         self.time = BacktestTime(None, None, None)
         self.schedule = []
         self.start_cash = start_cash
@@ -85,6 +86,13 @@ class Engine:
         """
         Method is to be overriden by subclass
         """
+
+        self.cash_on_hand = self.start_cash
+        self.portfolio = Portfolio(self.start_cash)
+        
+        print(self.start_date.strftime("%Y%m%d"))
+        print("Custom Initialize Engine")
+
         print("Initialize Engine")
         pass
 
@@ -176,18 +184,14 @@ class Engine:
             self.cash_on_hand -= (price * quantity)
 
         #adding trade to log
-        new_trade = Order(contract, 1, quantity, price, id)
+        new_trade = Order(contract, 1, quantity, price, id, self.get_date())
         self.order_id += 1
-        self.logs.add_trade(new_trade)
+
+        #self.logs.add_trade(self.get_date(), new_trade)
 
         #adding what was purchased in trade to portfolio
 
-    def sell(self, contract:OptionContract, quantity:int, date)->None:
-        price = self.adjusted_bid(contract, 1)
 
-        new_trade = Order(contract, 2, quantity, price, id)
-        self.order_id += 1
-        self.logs.add_trade(new_trade)
 
     def on_data(self, data: Slice):
         """

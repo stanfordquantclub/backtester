@@ -1,7 +1,7 @@
-import datetime
+from datetime import datetime
 
 class Order:
-    def __init__(self, contract_name, order_type, quantity, price_paid, id):
+    def __init__(self, contract_name, order_type, quantity, price_paid, id, date):
         """
         Args: contract_name (str): filepath to the contract that is being traded
               order_type (str): buy or sell indicating what action is being taken
@@ -16,8 +16,8 @@ class Order:
         self.id = id
 
         #datetime object created from parsing the file path s
-        self.date = datetime.datetime(int(contract_name[-12:-8]), int(contract_name[-8:-6]), int(contract_name[-6:-4]))
-    
+        self.date = date
+        
     def get_date(self):
         return self.date
 
