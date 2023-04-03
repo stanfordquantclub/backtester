@@ -33,17 +33,36 @@ class CustomModel(Engine):
         self.root_path = "/srv/sqc/data/us-options-tanq"
         self.start_cash = 10**6
         
-    
+        return self.start_cash
+
     def on_data(self, data: Slice):
         chain = data.get_chain("SPY")
         contracts = chain.get_contracts()
         
-        contract = contracts[75]
+        contract_0 = contracts[75]
+        contract_1 = contracts[70]
 
-        if (contract.get_seconds_elapsed() == 3600):
-            print(contract.get_date(), contract.get_seconds_elapsed(), self.adjusted_ask(contract, 1), self.adjusted_bid(contract, 1))
-            self.buy(contract, 5)
+        
+        if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 3600 == 0
+            and self.get_seconds_elapsed() % 7200 != 0):
+            self.buy(contract_1, 10)
+            print(self.portfolio.summary())
 
+        if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 7200 == 0):
+            self.buy(contract_0, 10)
+            print(self.portfolio.summary())
+        
+        if (self.get_seconds_elapsed() == 23000):
+            self.sell(contract_0, 40)
+            print(self.portfolio.summary())
+
+
+
+
+            
+
+        
+        
 
 
 model = CustomModel()

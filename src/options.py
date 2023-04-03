@@ -97,6 +97,7 @@ class OptionContract:
             
         return self.df.iloc[seconds_elapsed]["AskMax"]
     
+
     def get_date(self):
         return self.time.time.date()
 
@@ -108,6 +109,9 @@ class OptionContract:
     
     def get_seconds_elapsed(self):
         return self.time.seconds_elapsed
+
+    def get_name(self):
+        return self.path[-42:-4]
     
 class DailyOptionChain:
     def __init__(self, asset:str, paths: str, trade_date:date, time:date) -> None:

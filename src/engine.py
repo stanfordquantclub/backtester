@@ -58,11 +58,12 @@ class Engine:
         """
         print("Initialize Defaults")
 
-        self.portfolio = Portfolio(start_cash)
+        self.start_cash = self.initialize()
+
         self.time = BacktestTime(None, None, None)
         self.schedule = []
-        self.start_cash = start_cash
-        self.cash_on_hand = start_cash
+        self.portfolio = Portfolio(self.start_cash)
+        self.cash_on_hand = self.start_cash
         self.security_name = security_name
 
         self.start_date = start_date
@@ -82,16 +83,12 @@ class Engine:
         self.sortino_ratio = 1
         self.total_return = 0
 
+        
+
     def initialize(self):
         """
         Method is to be overriden by subclass
         """
-
-        self.cash_on_hand = self.start_cash
-        self.portfolio = Portfolio(self.start_cash)
-        
-        print(self.start_date.strftime("%Y%m%d"))
-        print("Custom Initialize Engine")
 
         print("Initialize Engine")
         pass
@@ -184,14 +181,25 @@ class Engine:
             self.cash_on_hand -= (price * quantity)
 
         #adding trade to log
-        new_trade = Order(contract, 1, quantity, price, id, self.get_date())
+        new_trade = Order(contract, 1, quantity, price, self.order_id, self.get_date())
         self.order_id += 1
 
-        #self.logs.add_trade(self.get_date(), new_trade)
+        #add trade to portfolio
+        self.portfolio.add_asset(contract, price, quantity)
 
-        #adding what was purchased in trade to portfolio
 
+    def sell(self, contract:OptionContract, quantity:int):
+        price = self.adjusted_bid(contract, 1)
 
+        if (self.portfolio.valid_sell(contract, quantity) == False):
+            return None
+
+        self.cash_on_hand += (price * quantity)
+
+        new_trade = Order(contract, 2, quantity, price, self.order_id, self.get_date())
+        self.order_id += 1
+
+        self.portfolio.remove_asset(contract, price, quantity)
 
     def on_data(self, data: Slice):
         """
