@@ -42,7 +42,7 @@ class CustomModel(Engine):
         contract_0 = contracts[75]
         contract_1 = contracts[70]
 
-        
+        '''        
         if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 3600 == 0
             and self.get_seconds_elapsed() % 7200 != 0):
             self.buy(contract_1, 10)
@@ -55,7 +55,11 @@ class CustomModel(Engine):
         if (self.get_seconds_elapsed() == 23000):
             self.sell(contract_0, 40)
             print(self.portfolio.summary())
+        '''
 
+        if (self.get_seconds_elapsed() == 3600):
+            self.buy(contract_1, 10)
+            
 
 
 

@@ -182,6 +182,7 @@ class Engine:
 
         #adding trade to log
         new_trade = Order(contract, 1, quantity, price, self.order_id, self.get_date())
+        
         self.order_id += 1
 
         #add trade to portfolio
