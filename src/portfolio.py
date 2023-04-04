@@ -2,7 +2,8 @@ from datetime import datetime
 from src.options import *
 
 class Portfolio:
-    def __init__(self, cash):
+    def __init__(self, cash, time):
+        self.time = time
         self.all_assets = {"cash": cash}
 
     def add_asset(self, asset, price_paid, quantity):
@@ -14,6 +15,8 @@ class Portfolio:
         self.all_assets["cash"] -= quantity * price_paid
 
     def remove_asset(self, asset, price_received, quantity):
+        assert quantity <= self.all_assets[asset], "Selling more than owned"
+        
         if (quantity < self.all_assets[asset]):
             self.all_assets[asset] -= quantity
         elif (quantity == self.all_assets[asset]):
@@ -25,8 +28,8 @@ class Portfolio:
         return self.all_assets["cash"]
 
     def assets(self):
-        list = [key.get_name() for key in self.all_assets.keys() if key != "cash"]
-        return list
+        assets_list = [key.get_name() for key in self.all_assets.keys() if key != "cash"]
+        return assets_list
 
     def summary(self):
         list = [[key.get_name(), self.all_assets[key]] for key in self.all_assets.keys() if key != "cash"]
@@ -40,16 +43,14 @@ class Portfolio:
                 return True
         else:
             return False
-
     
 
-    def portfolio_value(self, time_elapsed):
+    def portfolio_value(self):
         value = self.all_assets["cash"]
-
         
-        for key in self.all_assets.keys():
-            if key != "cash":
-                value += self.all_assets[key] * key.get_bid_max_price(time_elapsed)
+        for contract in self.all_assets.keys():
+            if contract != "cash":
+                value += self.all_assets[contract] * contract.get_bid_max_price()
         
         return value
 

@@ -62,7 +62,7 @@ class Engine:
 
         self.time = BacktestTime(None, None, None)
         self.schedule = []
-        self.portfolio = Portfolio(self.start_cash)
+        self.portfolio = Portfolio(self.start_cash, self.time)
         self.cash_on_hand = self.start_cash
         self.security_name = security_name
 
