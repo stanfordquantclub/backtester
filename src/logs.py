@@ -34,11 +34,15 @@ class Logs:
         return self.orders_files
 
     def get_ordered(self):
-        copy = self.orders_files
+        copy = OrderedDict()
 
-        for date in copy.keys():
-            for contract in copy[date].keys():
-                for trade in copy[date][contract]:
-                    trade = [trade.get_price_paid() * trade.get_quantity(), trade.get_order_type()]
-                    print(trade)
+        for date in self.orders_files.keys():
+            copy[date] = OrderedDict()
+            for contract in self.orders_files[date].keys():
+                copy[date][contract.get_name()] = []
+                for trade in self.orders_files[date][contract]:
+                    print(trade.get_price_paid())
+                    new_input = [trade.get_price_paid() * trade.get_quantity(), trade.get_order_type()]
+                    copy[date][contract.get_name()].append(new_input)
+        
         return copy

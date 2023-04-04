@@ -29,8 +29,8 @@ class CustomModel(Engine):
         self.start_date = date(2022, 12, 1)
         self.end_date = date(2022, 12, 1)
         
-        #self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/us-options-tanq"
-        self.root_path = "/srv/sqc/data/us-options-tanq"
+        self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/us-options-tanq"
+        #self.root_path = "/srv/sqc/data/us-options-tanq"
         self.start_cash = 10**6
         
         return self.start_cash
