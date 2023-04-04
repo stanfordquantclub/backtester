@@ -182,7 +182,7 @@ class Engine:
 
         #adding trade to log
         new_trade = Order(contract, 1, quantity, price, self.order_id)
-        self.logs.add_sequential(new_trade)
+        self.logs.add_ordered(new_trade)
 
         self.order_id += 1
 

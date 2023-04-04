@@ -17,5 +17,18 @@ class Logs:
         else:
             self.orders_sequential[trade.get_date()] = [trade]
             
+    def add_ordered(self, trade):
+        if (trade.get_date() in self.orders_files.keys()):
+            if (trade.get_asset() in self.orders_files[trade.get_date()]):
+                self.orders_files[trade.get_date()].append(trade.get_asset())
+            else:
+                self.orders_files[trade.get_date()][trade.get_asset()] = [trade]
+        else:
+            self.orders_files[trade.get_date()] = OrderedDict()
+            self.orders_files[trade.get_date()][trade.get_asset()] = [trade]
+
     def get_sequential(self):
         return self.orders_sequential
+
+    def get_ordered(self):
+        return self.orders_files
