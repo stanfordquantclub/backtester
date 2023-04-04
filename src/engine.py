@@ -181,8 +181,9 @@ class Engine:
             self.cash_on_hand -= (price * quantity)
 
         #adding trade to log
-        new_trade = Order(contract, 1, quantity, price, self.order_id, self.get_date())
-        
+        new_trade = Order(contract, 1, quantity, price, self.order_id)
+        self.logs.add_sequential(new_trade)
+
         self.order_id += 1
 
         #add trade to portfolio
@@ -197,7 +198,7 @@ class Engine:
 
         self.cash_on_hand += (price * quantity)
 
-        new_trade = Order(contract, 2, quantity, price, self.order_id, self.get_date())
+        new_trade = Order(contract, 2, quantity, price, self.order_id)
         self.order_id += 1
 
         self.portfolio.remove_asset(contract, price, quantity)

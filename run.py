@@ -59,7 +59,9 @@ class CustomModel(Engine):
 
         if (self.get_seconds_elapsed() == 3600):
             self.buy(contract_1, 10)
-            
+            self.buy(contract_0, 10)
+            print(self.logs.get_sequential())
+
 
 
 
