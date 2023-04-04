@@ -199,6 +199,8 @@ class Engine:
         self.cash_on_hand += (price * quantity)
 
         new_trade = Order(contract, 2, quantity, price, self.order_id)
+        self.logs.add_ordered(new_trade)
+
         self.order_id += 1
 
         self.portfolio.remove_asset(contract, price, quantity)
