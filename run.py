@@ -30,7 +30,8 @@ class CustomModel(Engine):
         self.end_date = date(2022, 12, 1)
         
         #self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/us-options-tanq"
-        self.root_path = "/srv/sqc/data/us-options-tanq"
+        # self.root_path = "/srv/sqc/data/us-options-tanq"        
+        self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
         self.start_cash = 10**6
         
         return self.start_cash
@@ -41,39 +42,27 @@ class CustomModel(Engine):
         
         contract_0 = contracts[75]
         contract_1 = contracts[70]
+        # print("init")
+        print(self.time.get_time(), contract_0.get_bid_max_price(), contract_0.get_adjusted_ask(2), contract_0.get_adjusted_bid(2))
 
-                
-        if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 3600 == 0
-            and self.get_seconds_elapsed() % 7200 != 0):
-            self.buy(contract_1, 10)
-            print(self.portfolio.summary())
+        # if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 3600 == 0
+        #     and self.get_seconds_elapsed() % 7200 != 0):
+        #     self.buy(contract_1, 10)
+        #     print(self.portfolio.summary())
 
-        if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 7200 == 0):
-            self.buy(contract_0, 10)
-            print(self.portfolio.summary())
+        # if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 7200 == 0):
+        #     self.buy(contract_0, 10)
+        #     print(self.portfolio.summary())
         
-        if (self.get_seconds_elapsed() == 23000):
-            self.sell(contract_0, 40)
-            print(self.portfolio.summary())
+        # if (self.get_seconds_elapsed() == 23000):
+        #     self.sell(contract_0, 40)
+        #     print(self.portfolio.summary())
         
-
-        if (self.get_seconds_elapsed() == 3600):
-            self.buy(contract_1, 10)
-            self.buy(contract_0, 10)
-            self.sell(contract_0, 5)
-            print(self.logs.get_ordered())
-
-
-
-
-            
-
-        
-        
-
+        # if (self.get_seconds_elapsed() == 3600):
+        #     self.buy(contract_1, 10)
+        #     self.buy(contract_0, 10)
+        #     self.sell(contract_0, 5)
+        #     print(self.logs.get_ordered())
 
 model = CustomModel()
 model.back_test()
-
-
-

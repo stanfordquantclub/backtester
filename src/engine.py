@@ -12,36 +12,8 @@ import statistics
 from src.logs import *
 from src.order import *
 from datetime import date, datetime, time, timedelta
+from src.backtesttime import BacktestTime
 from src.portfolio import Portfolio
-
-class BacktestTime:
-    def __init__(self, new_time:datetime, open_time:datetime, close_time:datetime) -> None:
-        self.time = new_time
-        self.seconds_elapsed = 0
-        self.open_time = open_time
-        self.close_time = close_time
-
-    def set_time(self, new_time:datetime):
-        self.time = new_time
-
-    def set_open_time(self, open_time:datetime):
-        self.open_time = open_time
-
-    def set_close_time(self, close_time:datetime):
-        self.close_time = close_time
-
-    def increment(self):
-        self.time += timedelta(seconds=1)
-        self.seconds_elapsed += 1
-
-    def get_time(self):
-        return self.time
-
-    def get_seconds_elapsed(self):
-        return self.seconds_elapsed
-
-    def reset_seconds_elapsed(self):
-        self.seconds_elapsed = 0
 
 class Engine:
     def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
@@ -82,8 +54,6 @@ class Engine:
         self.sharpe_ratio = 1
         self.sortino_ratio = 1
         self.total_return = 0
-
-        
 
     def initialize(self):
         """
@@ -144,32 +114,6 @@ class Engine:
                 option_chains[open_date] = [DailyOptionChain(self.security_name, expirations, open_date, self.time)]
 
             return option_chains
-
-    def adjusted_ask(self, contract:OptionContract, quantity:int)->None:
-        current_ask_price = contract.get_ask_min_price() * 0.75 + contract.get_ask_max_price() * 0.25
-
-        if self.get_time() == self.get_close_time():
-            next_ask_price = current_ask_price
-        else:
-            seconds_elapsed = self.get_seconds_elapsed()
-            next_ask_price = contract.get_ask_min_price(seconds_elapsed + 1) * 0.75 + contract.get_ask_max_price(seconds_elapsed + 1) * 0.25
-
-        price = round(max(current_ask_price, next_ask_price), 2)
-
-        return price
-
-    def adjusted_bid(self, contract:OptionContract, quantity:int)->None:
-        current_bid_price = contract.get_bid_max_price() * 0.75 + contract.get_bid_min_price() * 0.25
-
-        if self.get_time() == self.get_close_time():
-            next_bid_price = current_bid_price
-        else:
-            seconds_elapsed = self.get_seconds_elapsed()
-            next_bid_price = contract.get_bid_max_price(seconds_elapsed + 1) * 0.75 + contract.get_bid_min_price(seconds_elapsed + 1) * 0.25
-
-        price = round(min(current_bid_price, next_bid_price), 2)
-
-        return price
     
     def buy(self, contract:OptionContract, quantity:int):
         price = self.adjusted_ask(contract, 1)
@@ -205,15 +149,6 @@ class Engine:
 
         self.portfolio.remove_asset(contract, price, quantity)
 
-    def on_data(self, data: Slice):
-        """
-        Method is to be overriden by subclass
-
-        Args:
-            data (Slice): data slice of the csv data
-        """
-        pass
-
     def back_test(self):
         self.initialize_defaults()
         self.initialize()
@@ -223,6 +158,7 @@ class Engine:
         t1 = execution_time.time()
 
         for open_date, close_date in self.schedule:
+            # Iterates through each day in the schedule
             open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
 
             self.time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
@@ -237,6 +173,7 @@ class Engine:
             for chain in chains:
                 data.add_chain(chain.asset, chain)
 
+            # Iterate through each second in the day
             while self.get_time() <= close_date:
                 self.on_data(data)
 
@@ -244,11 +181,11 @@ class Engine:
 
         print("Execution Time: ", execution_time.time() - t1)
 
-    """
-    gets the total return on the portfolio
-    """
     def total_return(self):
-        self.total_return =  ((self.current_cash - self.start_cash)/ self.start_cash) * 100
+        """
+        Gets the total return on the portfolio
+        """
+        self.total_return = ((self.current_cash - self.start_cash)/ self.start_cash) * 100
 
     def calculate_trades(self):
         ordered_trades = self.logs.get_trades()
@@ -268,3 +205,12 @@ class Engine:
     def sharpe_ratio(self):
         standard_dev = statistics.stdev(self.trades)
         return self.total_return / standard_dev
+
+    def on_data(self, data: Slice):
+        """
+        Method is to be overriden by subclass
+
+        Args:
+            data (Slice): data slice of the csv data
+        """
+        pass

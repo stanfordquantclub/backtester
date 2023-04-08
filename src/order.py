@@ -15,7 +15,7 @@ class Order:
         self.price_paid = price_paid
         self.id = id
 
-        #datetime object created from parsing the file path s
+        # datetime object created from parsing the file path s
         self.date = asset.get_date()
         
     def get_date(self):
@@ -35,10 +35,3 @@ class Order:
     
     def get_id(self):
         return self.id
-    
-    
-    
-    
-    
-
-    
