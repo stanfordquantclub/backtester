@@ -52,15 +52,6 @@ class OptionContract:
             for row in islice(f_input, line, line + 1):
                 return row
             
-    def get_bid_max_price(self, seconds_elapsed=None):
-        if self.df is None:
-            self.load_df()
-
-        if seconds_elapsed is None:
-            seconds_elapsed = self.time.seconds_elapsed
-
-        return self.df.iloc[seconds_elapsed]["BidMax"]
-            
     def get_bid_min_price(self, seconds_elapsed=None):
         if self.df is None:
             self.load_df()
@@ -69,6 +60,15 @@ class OptionContract:
             seconds_elapsed = self.time.seconds_elapsed
             
         return self.df.iloc[seconds_elapsed]["BidMin"]
+            
+    def get_bid_max_price(self, seconds_elapsed=None):
+        if self.df is None:
+            self.load_df()
+
+        if seconds_elapsed is None:
+            seconds_elapsed = self.time.seconds_elapsed
+
+        return self.df.iloc[seconds_elapsed]["BidMax"]
             
     def get_ask_min_price(self, seconds_elapsed=None):
         if self.df is None:
@@ -88,15 +88,6 @@ class OptionContract:
             
         return self.df.iloc[seconds_elapsed]["AskMax"]
     
-    def get_ask_max_price(self, seconds_elapsed=None):
-        if self.df is None:
-            self.load_df()
-            
-        if seconds_elapsed is None:
-            seconds_elapsed = self.time.seconds_elapsed
-            
-        return self.df.iloc[seconds_elapsed]["AskMax"]
-
     def get_adjusted_ask(self, quantity:int)->None:
         """
         Gets the adjusted ask price (conservative) based on the current time and the next time,
