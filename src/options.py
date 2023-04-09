@@ -149,7 +149,9 @@ class OptionContract:
         return self.time.seconds_elapsed
 
     def get_name(self):
-        return self.path[-42:-4]
+        mod_path = self.path.split('/')
+        mod_path = mod_path[-2] + '/' + mod_path[-1]
+        return mod_path
     
 class DailyOptionChain:
     def __init__(self, asset:str, paths: str, trade_date:date, time:date) -> None:

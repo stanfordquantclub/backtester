@@ -35,7 +35,6 @@ class Engine:
         self.time = BacktestTime(None, None, None)
         self.schedule = []
         self.portfolio = Portfolio(self.start_cash, self.time)
-        self.cash_on_hand = self.start_cash
         self.security_name = security_name
 
         self.start_date = start_date
@@ -116,13 +115,11 @@ class Engine:
             return option_chains
     
     def buy(self, contract:OptionContract, quantity:int):
-        price = self.adjusted_ask(contract, 1)
+        price = contract.get_adjusted_ask(quantity)
 
          #insufficient funds to execute given trade
-        if (price * quantity > self.cash_on_hand):
+        if (price > self.portfolio.cash_amount()):
             return None
-        else:
-            self.cash_on_hand -= (price * quantity)
 
         #adding trade to log
         new_trade = Order(contract, 1, quantity, price, self.order_id)
@@ -135,12 +132,11 @@ class Engine:
 
 
     def sell(self, contract:OptionContract, quantity:int):
-        price = self.adjusted_bid(contract, 1)
+        price = contract.get_adjusted_bid(quantity)
 
         if (self.portfolio.valid_sell(contract, quantity) == False):
             return None
 
-        self.cash_on_hand += (price * quantity)
 
         new_trade = Order(contract, 2, quantity, price, self.order_id)
         self.logs.add_ordered(new_trade)
@@ -185,7 +181,7 @@ class Engine:
         """
         Gets the total return on the portfolio
         """
-        self.total_return = ((self.current_cash - self.start_cash)/ self.start_cash) * 100
+        self.total_return = ((self.portfolio.cash_mount() - self.start_cash)/ self.start_cash) * 100
 
     def calculate_trades(self):
         ordered_trades = self.logs.get_trades()
