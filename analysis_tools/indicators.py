@@ -12,7 +12,10 @@ used in impulse calculation
 def vel_list(list):
     vel_list = [0]
     for ind in range(len(list) - 1):
-        vel_list.append((list[ind + 1] - list[ind]) / list[ind])
+        if(list[ind] == 0):
+            vel_list.append(0)
+        else:
+            vel_list.append((list[ind + 1] - list[ind]) / list[ind])
 
     return vel_list
 
