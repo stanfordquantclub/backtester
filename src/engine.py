@@ -1,5 +1,4 @@
 import pandas_market_calendars as mcal
-from datetime import date, datetime, time, timedelta
 import pytz
 import glob
 import pandas as pd
@@ -9,38 +8,15 @@ import os
 import statistics
 from src.options import *
 import time as execution_time
-
-class BacktestTime:
-    def __init__(self, new_time:datetime, open_time:datetime, close_time:datetime) -> None:
-        self.time = new_time
-        self.seconds_elapsed = 0
-        self.open_time = open_time
-        self.close_time = close_time
-
-    def set_time(self, new_time:datetime):
-        self.time = new_time
-
-    def set_open_time(self, open_time:datetime):
-        self.open_time = open_time
-
-    def set_close_time(self, close_time:datetime):
-        self.close_time = close_time
-
-    def increment(self):
-        self.time += timedelta(seconds=1)
-        self.seconds_elapsed += 1
-
-    def get_time(self):
-        return self.time
-
-    def get_seconds_elapsed(self):
-        return self.seconds_elapsed
-
-    def reset_seconds_elapsed(self):
-        self.seconds_elapsed = 0
+import statistics
+from src.logs import *
+from src.order import *
+from datetime import date, datetime, time, timedelta
+from src.backtesttime import BacktestTime
+from src.portfolio import Portfolio
 
 class Engine:
-    def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
+    def initialize_defaults(self, security_name: str=None, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
         """
         Initialize the defaults for the engine
 
@@ -54,10 +30,11 @@ class Engine:
         """
         print("Initialize Defaults")
 
-        self.portfolio = {}
+        self.cash = cash
+
         self.time = BacktestTime(None, None, None)
         self.schedule = []
-        self.start_cash = start_cash
+        self.portfolio = portfolio
         self.security_name = security_name
 
         self.start_date = start_date
@@ -67,16 +44,36 @@ class Engine:
         self.filter_paths = filter_paths
         self.root_path = root_path
         self.timezone = timezone
+        self.logs = Logs()
+        self.order_id = 1
+
+        #[[trading_day_1 {file_name: [trade_1 [buy [price, number_of_contracts], sell [price, number_of_contracts] ] ] , file_name}], [trading_day_2 {}], ]
+
+        self.trades = []
+        self.sharpe_ratio = 1
+        self.sortino_ratio = 1
+        self.total_return = 0
 
     def initialize(self):
         """
         Method is to be overriden by subclass
         """
+
         print("Initialize Engine")
         pass
+    
+    def initialize_after(self):
+        """
+        Further initialization after the engine is initialized from user method, using variables that the
+        user set in the initialize method.
+        """
+        self.portfolio = Portfolio(self.cash, self.time)
 
     def get_time(self):
         return self.time.time
+    
+    def get_date(self):
+        return self.time.time.date()
 
     def get_open_time(self):
         return self.time.open_time
@@ -123,51 +120,49 @@ class Engine:
                 option_chains[open_date] = [DailyOptionChain(self.security_name, expirations, open_date, self.time)]
 
             return option_chains
+    
+    def buy(self, contract:OptionContract, quantity:int):
+        price = contract.get_adjusted_ask(quantity)
 
-    def buy(self, contract:OptionContract, quantity:int)->None:
-        current_ask_price = contract.get_ask_min_price() * 0.75 + contract.get_ask_max_price() * 0.25
+         #insufficient funds to execute given trade
+        if (price > self.portfolio.cash_amount()):
+            return None
 
-        if self.get_time() == self.get_close_time():
-            next_ask_price = current_ask_price
-        else:
-            seconds_elapsed = self.get_seconds_elapsed()
-            next_ask_price = contract.get_ask_min_price(seconds_elapsed + 1) * 0.75 + contract.get_ask_max_price(seconds_elapsed + 1) * 0.25
+        #adding trade to log
+        new_trade = Order(contract, 1, quantity, price, self.order_id)
+        self.logs.add_ordered(new_trade)
 
-        price = round(max(current_ask_price, next_ask_price), 2)
+        self.order_id += 1
 
-        return price
+        #add trade to portfolio
+        self.portfolio.add_asset(contract, price, quantity)
 
-    def sell(self, contract:OptionContract, quantity:int)->None:
-        current_bid_price = contract.get_bid_max_price() * 0.75 + contract.get_bid_min_price() * 0.25
 
-        if self.get_time() == self.get_close_time():
-            next_bid_price = current_bid_price
-        else:
-            seconds_elapsed = self.get_seconds_elapsed()
-            next_bid_price = contract.get_bid_max_price(seconds_elapsed + 1) * 0.75 + contract.get_bid_min_price(seconds_elapsed + 1) * 0.25
+    def sell(self, contract:OptionContract, quantity:int):
+        price = contract.get_adjusted_bid(quantity)
 
-        price = round(min(current_bid_price, next_bid_price), 2)
+        if (self.portfolio.valid_sell(contract, quantity) == False):
+            return None
 
-        return price
 
-    def on_data(self, data: Slice):
-        """
-        Method is to be overriden by subclass
+        new_trade = Order(contract, 2, quantity, price, self.order_id)
+        self.logs.add_ordered(new_trade)
 
-        Args:
-            data (Slice): data slice of the csv data
-        """
-        pass
+        self.order_id += 1
+
+        self.portfolio.remove_asset(contract, price, quantity)
 
     def back_test(self):
-        self.initialize_defaults()
-        self.initialize()
+        self.initialize_defaults() # initializes fields
+        self.initialize() # user defined
+        self.initialize_after() # uses user defined variables
 
         options_chains = self.get_chains()
 
         t1 = execution_time.time()
 
         for open_date, close_date in self.schedule:
+            # Iterates through each day in the schedule
             open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
 
             self.time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
@@ -182,9 +177,44 @@ class Engine:
             for chain in chains:
                 data.add_chain(chain.asset, chain)
 
+            # Iterate through each second in the day
             while self.get_time() <= close_date:
                 self.on_data(data)
 
                 self.time.increment()
 
         print("Execution Time: ", execution_time.time() - t1)
+
+    def total_return(self):
+        """
+        Gets the total return on the portfolio
+        """
+        self.total_return = ((self.portfolio.cash_mount() - self.cash)/ self.cash) * 100
+
+    def calculate_trades(self):
+        ordered_trades = self.logs.get_trades()
+        traded_contracts = list(ordered_trades.keys())
+
+        for contract in traded_contracts:
+            #the trades_made within one contract
+            trades_made = ordered_trades[contract]
+
+            ind = 0
+            while (len(trades_made != 0)):
+                if (trades_made[ind].get_order_type != trades_made[ind + 1].get_order_type):
+                    self.trades.append((trades_made[ind + 1].get_price_paid() - trades_made[ind].get_price_paid()) / trades_made[ind])
+                    del trades_made[ind]
+                    del trades_made[ind]
+
+    def sharpe_ratio(self):
+        standard_dev = statistics.stdev(self.trades)
+        return self.total_return / standard_dev
+
+    def on_data(self, data: Slice):
+        """
+        Method is to be overriden by subclass
+
+        Args:
+            data (Slice): data slice of the csv data
+        """
+        pass

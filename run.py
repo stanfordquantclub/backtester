@@ -4,8 +4,9 @@ from src.create_candles import *
 import glob
 import time as execution_time
 from src.engine import Slice
+from src.portfolio import Portfolio
 
-# create_candles(
+# create_contract_candles(
 #   'Data/SPY.C439.20221201.csv',
 #   output_path="Data/",
 #   start_time=time(9, 30, 0), 
@@ -14,7 +15,7 @@ from src.engine import Slice
 
 # day_path = "/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221202/S/SPY/SPY.20221202"
 
-# create_candles_day(
+# create_contract_candles_day(
 #     asset="SPY",
 #     day_path=day_path,
 #     output_path=day_path,
@@ -26,24 +27,40 @@ class CustomModel(Engine):
         self.security_name = "SPY"
         
         self.start_date = date(2022, 12, 1)
-        self.end_date = date(2022, 12, 2)
+        self.end_date = date(2022, 12, 1)
         
-        self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
-        self.start_cash = 10**6
+        self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/us-options-tanq"
+        # self.root_path = "/srv/sqc/data/us-options-tanq"        
+        #self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
+        self.cash = 10**6
         
-        print(self.start_date.strftime("%Y%m%d"))
-        print("Custom Initialize Engine")
-    
     def on_data(self, data: Slice):
         chain = data.get_chain("SPY")
         contracts = chain.get_contracts()
         
-        contract = contracts[0]
+        contract_0 = contracts[75]
+        contract_1 = contracts[70]
+        # print("init")
+        # print(self.time.get_time(), contract_0.get_bid_max_price(), contract_0.get_adjusted_ask(2), contract_0.get_adjusted_bid(2))
+
+        if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 3600 == 0
+            and self.get_seconds_elapsed() % 7200 != 0):
+             self.buy(contract_1, 10)
+             print(self.portfolio.summary())
+
+        # if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 7200 == 0):
+        #     self.buy(contract_0, 10)
+        #     print(self.portfolio.summary())
         
-        # row = contract.get_ask_price()
-        # row = contract.get_ask_price_df()
+        # if (self.get_seconds_elapsed() == 23000):
+        #     self.sell(contract_0, 40)
+        #     print(self.portfolio.summary())
         
-        # print(contract.get_time(), contract.get_seconds_elapsed(), row["AskMin"])
+        # if (self.get_seconds_elapsed() == 3600):
+        #     self.buy(contract_1, 10)
+        #     self.buy(contract_0, 10)
+        #     self.sell(contract_0, 5)
+        #     print(self.logs.get_ordered())
 
 model = CustomModel()
 model.back_test()
