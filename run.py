@@ -32,10 +32,8 @@ class CustomModel(Engine):
         self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/us-options-tanq"
         # self.root_path = "/srv/sqc/data/us-options-tanq"        
         #self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
-        self.start_cash = 10**6
+        self.cash = 10**6
         
-        return self.start_cash
-
     def on_data(self, data: Slice):
         chain = data.get_chain("SPY")
         contracts = chain.get_contracts()

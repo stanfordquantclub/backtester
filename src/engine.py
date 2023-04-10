@@ -16,7 +16,7 @@ from src.backtesttime import BacktestTime
 from src.portfolio import Portfolio
 
 class Engine:
-    def initialize_defaults(self, security_name: str=None, start_cash: float=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
+    def initialize_defaults(self, security_name: str=None, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
         """
         Initialize the defaults for the engine
 
@@ -30,11 +30,11 @@ class Engine:
         """
         print("Initialize Defaults")
 
-        self.start_cash = self.initialize()
+        self.cash = cash
 
         self.time = BacktestTime(None, None, None)
         self.schedule = []
-        self.portfolio = Portfolio(self.start_cash, self.time)
+        self.portfolio = portfolio
         self.security_name = security_name
 
         self.start_date = start_date
@@ -61,6 +61,13 @@ class Engine:
 
         print("Initialize Engine")
         pass
+    
+    def initialize_after(self):
+        """
+        Further initialization after the engine is initialized from user method, using variables that the
+        user set in the initialize method.
+        """
+        self.portfolio = Portfolio(self.cash, self.time)
 
     def get_time(self):
         return self.time.time
@@ -146,8 +153,9 @@ class Engine:
         self.portfolio.remove_asset(contract, price, quantity)
 
     def back_test(self):
-        self.initialize_defaults()
-        self.initialize()
+        self.initialize_defaults() # initializes fields
+        self.initialize() # user defined
+        self.initialize_after() # uses user defined variables
 
         options_chains = self.get_chains()
 
@@ -181,7 +189,7 @@ class Engine:
         """
         Gets the total return on the portfolio
         """
-        self.total_return = ((self.portfolio.cash_mount() - self.start_cash)/ self.start_cash) * 100
+        self.total_return = ((self.portfolio.cash_mount() - self.cash)/ self.cash) * 100
 
     def calculate_trades(self):
         ordered_trades = self.logs.get_trades()
