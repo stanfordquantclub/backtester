@@ -1,5 +1,3 @@
-from datetime import datetime
-
 class Order:
     def __init__(self, asset, order_type, quantity, price_paid, id):
         """

@@ -43,7 +43,6 @@ class Portfolio:
         else:
             return False
     
-
     def portfolio_value(self):
         value = self.cash
         
@@ -51,10 +50,3 @@ class Portfolio:
             value += self.all_assets[contract] * contract.get_adjusted_bid()
         
         return value
-
-    
-    
-
-
-
-    
