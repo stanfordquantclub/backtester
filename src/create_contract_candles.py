@@ -8,7 +8,7 @@ import pytz
 import multiprocessing
 import glob
 
-def create_candles_day(asset: str, day_path: str, output_path: str, timezone:str="US/Eastern", processes=1):
+def create_contract_candles_day(asset: str, day_path: str, output_path: str, timezone:str="US/Eastern", processes=1):
     """
     Creates the candles for every contract within a day
 
@@ -48,7 +48,7 @@ def create_candles_day(asset: str, day_path: str, output_path: str, timezone:str
 
         process.start()
 
-def create_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=time(16, 0, 0)):
+def create_contract_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=time(16, 0, 0)):
     """
     Description:
         Bid-ask price min and max not including Side == T

@@ -6,7 +6,7 @@ import time as execution_time
 from src.engine import Slice
 from src.portfolio import Portfolio
 
-# create_candles(
+# create_contract_candles(
 #   'Data/SPY.C439.20221201.csv',
 #   output_path="Data/",
 #   start_time=time(9, 30, 0), 
@@ -15,7 +15,7 @@ from src.portfolio import Portfolio
 
 # day_path = "/mnt/z/srv/sqc/data/us-options-tanq/us-options-tanq-2022/20221202/S/SPY/SPY.20221202"
 
-# create_candles_day(
+# create_contract_candles_day(
 #     asset="SPY",
 #     day_path=day_path,
 #     output_path=day_path,
