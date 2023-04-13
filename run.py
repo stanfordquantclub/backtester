@@ -1,6 +1,6 @@
 from datetime import date, time, datetime, timedelta
 from src.engine import Engine
-from src.create_candles import *
+from src.create_contract_candles import *
 import glob
 import time as execution_time
 from src.engine import Slice
@@ -29,8 +29,14 @@ class CustomModel(Engine):
         self.start_date = date(2022, 12, 1)
         self.end_date = date(2022, 12, 1)
         
-        self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/us-options-tanq"
-        # self.root_path = "/srv/sqc/data/us-options-tanq"        
+        '''
+        1 - Luke's Laptop
+        2 - Main desktop
+        3 - Irfan's Laptop
+        '''
+
+        #self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/us-options-tanq"
+        self.root_path = "/srv/sqc/data/us-options-tanq"        
         #self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
         self.cash = 10**6
         
