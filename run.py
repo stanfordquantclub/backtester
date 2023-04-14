@@ -46,6 +46,7 @@ class CustomModel(Engine):
         
         contract_0 = contracts[75]
         contract_1 = contracts[70]
+        contract_2 = contracts[71]
         # print("init")
         # print(self.time.get_time(), contract_0.get_bid_max_price(), contract_0.get_adjusted_ask(2), contract_0.get_adjusted_bid(2))
 
