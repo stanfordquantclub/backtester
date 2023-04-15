@@ -68,7 +68,7 @@ def create_underlying_candles(file_path, output_path, start_time=time(9, 30, 0),
     end_time = int(end_datetime.strftime("%H%M%S")) * 1000
 
     # FILTER OUT ITEMS FROM PRE-MARKET AND POST-MARKET
-    df["TimestampSec"] = pd.to_numeric(df["Timestamp"].str.slice(stop=8).str.replace(
+    df["TimestampSec"] = pd.to_numeric(df["Timestamp"].str.slice(stop=8).str.replace(':', ''))
     df = df[(df["TimestampSec"] >= start_time * 1000) & (df["TimestampSec"] < end_time * 1000)]
     total_seconds = int((end_datetime - start_datetime).total_seconds())
     
