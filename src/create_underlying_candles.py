@@ -79,8 +79,4 @@ def create_underlying_candles(file_path, output_path, start_time=time(9, 30, 0),
                           .reindex(pd.Index(CLOCK_HOURS))
                           .fillna(method='ffill'))
 
-    print(df_median_price)
-
     df_median_price.to_csv(os.path.join(output_path, "Candles." + os.path.basename(file_path)), encoding='utf-8', index_label='TimestampSec')
-
-create_underlying_candles("/Users/lukepark/Documents/Sample_data/SPY.csv", "/Users/lukepark/Documents/Sample_data/")

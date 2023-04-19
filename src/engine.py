@@ -1,3 +1,8 @@
+from src.options import *
+from src.logs import Logs
+from src.order import Order
+from src.backtesttime import BacktestTime
+from src.portfolio import Portfolio
 import pandas_market_calendars as mcal
 import pytz
 import glob
@@ -6,27 +11,24 @@ from itertools import islice
 from collections import OrderedDict
 import os
 import statistics
-from src.options import *
 import time as execution_time
 import statistics
-from src.logs import *
-from src.order import *
 from datetime import date, datetime, time, timedelta
-from src.backtesttime import BacktestTime
-from src.portfolio import Portfolio
 
 class Engine:
-    def initialize_defaults(self, security_name: str=None, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, filter_paths=None, timezone="US/Eastern", root_path="/srv/sqc/data/us-options-tanq"):
+    def initialize_defaults(self, security_name: str=None, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/"):
         """
         Initialize the defaults for the engine
 
         Args:
             security_name (str): name of the security to backtest
+            cash (float): amount of cash to start with
+            portfolio (Portfolio): portfolio to use for the backtest
             start_date (date): start date of the backtest
             end_date (date): end date of the backtest
             path_dates (list[str]): list of paths to use for the backtest - if this is used, start_date and end_date are ignored
-            filter (str): filter to use when generating paths within the start_date and end_date or path_dates
-
+            timezone (str): timezone to use for the backtest
+            root_path (str): root path to use for the backtest - must be absolute path
         """
         print("Initialize Defaults")
 
@@ -41,7 +43,6 @@ class Engine:
         self.end_date = end_date
         self.path_dates = path_dates
 
-        self.filter_paths = filter_paths
         self.root_path = root_path
         self.timezone = timezone
         self.logs = Logs()
@@ -113,11 +114,12 @@ class Engine:
             for day, (open_date, close_date) in schedule.iterrows():
                 self.schedule.append([open_date, close_date])
                 # All the expirations within the day
-                data_path = f"{self.root_path}/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/{self.security_name}/*"
+                data_path = f"{self.root_path}us-options-tanq/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/{self.security_name}/*"
+                underlying_path = f"{self.root_path}client-2378-luke-eq-taq/{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/Candles.{self.security_name}.csv"
                 expirations = glob.glob(data_path)
 
-                # Put it in array format to expand to multiple assets
-                option_chains[open_date] = [DailyOptionChain(self.security_name, expirations, open_date, self.time)]
+                # Put it in array format to expand to multiple assets later
+                option_chains[open_date] = [DailyOptionChain(self.security_name, expirations, underlying_path, open_date, self.time)]
 
             return option_chains
     
