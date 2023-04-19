@@ -58,6 +58,7 @@ def create_underlying_candles(file_path, output_path, start_time=time(9, 30, 0),
     """    
     
     df = pd.read_csv(file_path)
+    print(f'Read file {file_path}')
 
     # Convert to milliseconds
     start_datetime = datetime.combine(date.today(), start_time) + timedelta(seconds=1)
@@ -69,13 +70,17 @@ def create_underlying_candles(file_path, output_path, start_time=time(9, 30, 0),
 
     # FILTER OUT ITEMS FROM PRE-MARKET AND POST-MARKET
     df["TimestampSec"] = pd.to_numeric(df["Timestamp"].str.slice(stop=8).str.replace(':', ''))
-    df = df[(df["TimestampSec"] >= start_time * 1000) & (df["TimestampSec"] < end_time * 1000)]
+    df = df[(df["TimestampSec"] >= start_time // 1000) & (df["TimestampSec"] < end_time // 1000)]
     total_seconds = int((end_datetime - start_datetime).total_seconds())
     
     CLOCK_HOURS = np.array([int((start_datetime + timedelta(seconds=x)).time().strftime("%H%M%S")) for x in range(0, total_seconds)])
 
     df_median_price =  (df.groupby(df['TimestampSec'])['Price'].median()
-                        .reindex(pd.Index(CLOCK_HOURS))
-                        .fillna(method='ffill'))
+                          .reindex(pd.Index(CLOCK_HOURS))
+                          .fillna(method='ffill'))
+
+    print(df_median_price)
 
     df_median_price.to_csv(os.path.join(output_path, "Candles." + os.path.basename(file_path)), encoding='utf-8', index_label='TimestampSec')
+
+create_underlying_candles("/Users/lukepark/Documents/Sample_data/SPY.csv", "/Users/lukepark/Documents/Sample_data/")
