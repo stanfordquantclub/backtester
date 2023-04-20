@@ -68,7 +68,18 @@ class Engine:
         Further initialization after the engine is initialized from user method, using variables that the
         user set in the initialize method.
         """
+        
+        # Create the portfolio
         self.portfolio = Portfolio(self.cash, self.time)
+        
+        # Create the schedule
+        nyse = mcal.get_calendar('NYSE')
+        schedule = nyse.schedule(self.start_date, self.end_date)
+        schedule["market_open"] = schedule["market_open"].dt.tz_convert(pytz.timezone(self.timezone))
+        schedule["market_close"] = schedule["market_close"].dt.tz_convert(pytz.timezone(self.timezone))
+
+        for day, (open_date, close_date) in schedule.iterrows():
+            self.schedule.append([open_date, close_date])
 
     def get_time(self):
         return self.time.time
@@ -85,7 +96,18 @@ class Engine:
     def get_seconds_elapsed(self):
         return self.time.seconds_elapsed
 
-    def get_chains(self):
+    def get_underlying(self):
+        if self.start_date and self.end_date:
+            underlying_assets = OrderedDict()
+            
+            for open_date, close_date in self.schedule:
+                underlying_path = f"{self.root_path}client-2378-luke-eq-taq/{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/Candles.{self.security_name}.csv"
+                
+                underlying_assets[open_date] = UnderlyingAsset(self.security_name, underlying_path, open_date, self.time)
+
+            return underlying_assets    
+        
+    def get_chains(self, underlying_assets):
         """
         Get's the data paths for the backtest
 
@@ -100,26 +122,18 @@ class Engine:
 
         if self.path_dates:
             return self.path_dates
-
+        
         if self.start_date and self.end_date:
             option_chains = OrderedDict()
 
-            nyse = mcal.get_calendar('NYSE')
-
-            schedule = nyse.schedule(self.start_date, self.end_date)
-
-            schedule["market_open"] = schedule["market_open"].dt.tz_convert(pytz.timezone(self.timezone))
-            schedule["market_close"] = schedule["market_close"].dt.tz_convert(pytz.timezone(self.timezone))
-
-            for day, (open_date, close_date) in schedule.iterrows():
-                self.schedule.append([open_date, close_date])
+            for open_date, close_date in self.schedule:
                 # All the expirations within the day
                 data_path = f"{self.root_path}us-options-tanq/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/{self.security_name}/*"
-                underlying_path = f"{self.root_path}client-2378-luke-eq-taq/{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/Candles.{self.security_name}.csv"
                 expirations = glob.glob(data_path)
+                underlying_asset = underlying_assets[open_date]
 
                 # Put it in array format to expand to multiple assets later
-                option_chains[open_date] = [DailyOptionChain(self.security_name, expirations, underlying_path, open_date, self.time)]
+                option_chains[open_date] = [DailyOptionChain(self.security_name, expirations, underlying_asset, open_date, self.time)]
 
             return option_chains
     
@@ -146,46 +160,12 @@ class Engine:
         if (self.portfolio.valid_sell(contract, quantity) == False):
             return None
 
-
         new_trade = Order(contract, 2, quantity, price, self.order_id)
         self.logs.add_ordered(new_trade)
 
         self.order_id += 1
 
         self.portfolio.remove_asset(contract, price, quantity)
-
-    def back_test(self):
-        self.initialize_defaults() # initializes fields
-        self.initialize() # user defined
-        self.initialize_after() # uses user defined variables
-
-        options_chains = self.get_chains()
-
-        t1 = execution_time.time()
-
-        for open_date, close_date in self.schedule:
-            # Iterates through each day in the schedule
-            open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
-
-            self.time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
-            self.time.set_open_time(open_date)
-            self.time.set_close_time(close_date)
-            self.time.reset_seconds_elapsed()
-
-            chains = options_chains[open_date] # chains get redefined every day (old chains are deleted through garbage collection)
-            data = Slice()
-
-            # Iterate through each asset options chain at the current date
-            for chain in chains:
-                data.add_chain(chain.asset, chain)
-
-            # Iterate through each second in the day
-            while self.get_time() <= close_date:
-                self.on_data(data)
-
-                self.time.increment()
-
-        print("Execution Time: ", execution_time.time() - t1)
 
     def total_return(self):
         """
@@ -212,6 +192,40 @@ class Engine:
         standard_dev = statistics.stdev(self.trades)
         return self.total_return / standard_dev
 
+    def back_test(self):
+        self.initialize_defaults() # initializes fields
+        self.initialize() # user defined
+        self.initialize_after() # uses user defined variables
+
+        underlying_assets = self.get_underlying()
+        options_chains = self.get_chains(underlying_assets)
+
+        t1 = execution_time.time()
+
+        for open_date, close_date in self.schedule:
+            # Iterates through each day in the schedule
+            open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
+
+            self.time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
+            self.time.set_open_time(open_date)
+            self.time.set_close_time(close_date)
+            self.time.reset_seconds_elapsed()
+
+            chains = options_chains[open_date] # chains get redefined every day (old chains are deleted through garbage collection)
+            data = Slice()
+
+            # Iterate through each asset options chain at the current date
+            for chain in chains:
+                data.add_chain(chain.asset, chain)
+
+            # Iterate through each second in the day
+            while self.get_time() <= close_date:
+                self.on_data(data)
+
+                self.time.increment()
+
+        print("Execution Time: ", execution_time.time() - t1)
+        
     def on_data(self, data: Slice):
         """
         Method is to be overriden by subclass

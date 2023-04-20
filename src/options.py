@@ -6,6 +6,7 @@ import pandas as pd
 from itertools import islice
 from collections import OrderedDict
 import os
+from src.backtesttime import BacktestTime
 
 class Options:
     CALL = 0
@@ -18,6 +19,13 @@ class Slice:
     """
     def __init__(self) -> None:
         self.chains = {}
+        self.underlying = {}
+        
+    def add_underlying(self, asset_name, underlying):
+        self.underlying[asset_name] = underlying
+        
+    def get_underlying(self, asset_name):
+        return self.underlying[asset_name]
         
     def add_chain(self, asset_name, chain):
         self.chains[asset_name] = chain
@@ -147,9 +155,10 @@ class OptionContract:
         return mod_path
     
 class UnderlyingAsset:
-    def __init__(self, asset, path, time) -> None:
+    def __init__(self, asset, path, trade_date:date, time:BacktestTime) -> None:
         self.asset = asset
-        self.path = path
+        self.path = path       
+        self.trade_date = trade_date
         self.time = time
         self.df = None
         
@@ -167,18 +176,20 @@ class UnderlyingAsset:
         return self.df.iloc[seconds_elapsed]["Price"]
     
 class DailyOptionChain:
-    def __init__(self, asset:str, paths: str, underlying_path: str, trade_date:date, time:date, options_filter=None) -> None:
+    def __init__(self, asset:str, paths: str, underlying: UnderlyingAsset, trade_date:date, time:BacktestTime, options_filter=None) -> None:
         """_summary_
 
         Args:
             asset (str): _description_
             paths (str): _description_
             trade_date (date): _description_
-            time (date): _description_
+            time (BacktestTime): _description_
             options_filter (func, optional): Function header - options_filter(contract: OptionContract) -> bool - returns True if contract should be included in chain, False otherwise. Defaults to None.
         """
+        
         self.asset = asset
         self.paths = paths # list of expirations paths
+        self.underlying = underlying
         self.trade_date = trade_date
         self.contracts = None
         self.time = time
@@ -186,6 +197,9 @@ class DailyOptionChain:
         
     def set_filter(self, options_filter):
         self.options_filter = options_filter
+        
+    def set_expiration_strike_filter(self, expiration, strike):
+        self.set_filter(lambda contract: contract.expiration == expiration and contract.strike == strike)
         
     def extract_contract_metadata(self, contract_path):
         properties = os.path.basename(contract_path).split(".")
