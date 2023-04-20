@@ -59,8 +59,6 @@ class Engine:
         """
         Method is to be overriden by subclass
         """
-
-        print("Initialize Engine")
         pass
     
     def initialize_after(self):
@@ -195,7 +193,7 @@ class Engine:
     def back_test(self):
         self.initialize_defaults() # initializes fields
         self.initialize() # user defined
-        self.initialize_after() # uses user defined variables
+        self.initialize_after() # finished initialization with user defined variables
 
         underlying_assets = self.get_underlying()
         options_chains = self.get_chains(underlying_assets)
@@ -223,8 +221,6 @@ class Engine:
                 self.on_data(data)
 
                 self.time.increment()
-
-                return #REMOVE
 
         print("Execution Time: ", execution_time.time() - t1)
         

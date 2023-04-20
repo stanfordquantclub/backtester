@@ -35,7 +35,7 @@ class Slice:
         return self.chains[asset_name]
         
 class OptionContract:
-    def __init__(self, asset, contract_type, strike, expiration, path, time) -> None:
+    def __init__(self, asset:str, contract_type:Options, strike:int, expiration: date, path:str, time: BacktestTime) -> None:
         self.asset = asset
         self.contract_type = contract_type
         self.strike = strike
@@ -205,18 +205,27 @@ class DailyOptionChain:
     def set_filter(self, options_filter):
         self.options_filter = options_filter
         
-    def set_expiration_strike_filter(self, min_strike=None, max_strike=None, min_expiry=None, max_expiry=None):
-        def contract_filter(contract, min_strike=min_strike, max_strike=max_strike, min_expiry=min_expiry, max_expiry=max_expiry):
+    def set_expiration_strike_filter(self, min_strike:int=None, max_strike:int=None, min_expiration:int=None, max_expiration:int=None):
+        """
+        Set filters based on strike and expiration.
+        
+        Args:
+            min_strike (int): The minimum strike distance from the underlying price (inclusive)
+            max_strike (int): The maximum strike distance from the underlying price (inclusive)
+            min_expiration (int): The minimum number of days until expiration (inclusive)
+            max_expiration (int): The maximum number of days until expiration (inclusive)
+        """
+        def contract_filter(contract):
             if min_strike and self.strike_distance(contract.strike, 1) < min_strike:
                 return False
             
             if max_strike and self.strike_distance(contract.strike, 1) > max_strike:
                 return False
             
-            if min_expiry and contract.expiration < min_expiry:
+            if min_expiration and (contract.get_expiration().date() - self.time.get_time().date()).days < min_expiration:
                 return False
             
-            if max_expiry and contract.expiration > max_expiry:
+            if max_expiration and (contract.get_expiration().date() - self.time.get_time().date()).days > max_expiration:
                 return False
             
             return True
@@ -247,7 +256,7 @@ class DailyOptionChain:
             strike += int(properties[3]) / 10**len(properties[3])
             del properties[3]
                     
-        expiration = datetime.strptime(properties[3], '%Y%m%d').strftime('%m/%d/%Y')
+        expiration = datetime.strptime(properties[3], '%Y%m%d')
         
         return asset, contract_type, strike, expiration
     
@@ -270,3 +279,4 @@ class DailyOptionChain:
         if self.contracts is None:
             self.load_contracts()
         return self.contracts
+    
