@@ -18,11 +18,11 @@ def create_contract_candles_day(asset: str, day_path: str, output_path: str, tim
         output_path (str): path to the output
         timezone (str): timezone to use for the candles
     """
-
-    def create_candles_day_paths(contract_paths, output_path, open_time, close_time):
+    
+    def create_contract_candles_day_paths(contract_paths, output_path, open_time, close_time):
         for contract_path in contract_paths:
-            create_candles(
-                contract_path,
+            create_contract_candles(
+                contract_path, 
                 output_path=output_path,
                 start_time=open_time,
                 end_time=close_time
@@ -44,8 +44,8 @@ def create_contract_candles_day(asset: str, day_path: str, output_path: str, tim
     contract_paths = np.array_split(contract_paths, processes)
 
     for process_index in range(processes):
-        process = multiprocessing.Process(target=create_candles_day_paths, args=(contract_paths[process_index], output_path, open_time, close_time))
-
+        process = multiprocessing.Process(target=create_contract_candles_day_paths, args=(contract_paths[process_index], output_path, open_time, close_time))
+ 
         process.start()
 
 def create_contract_candles(file_path, output_path, start_time=time(9, 30, 0), end_time=time(16, 0, 0)):

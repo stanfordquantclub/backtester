@@ -6,6 +6,8 @@ import pandas as pd
 from itertools import islice
 from collections import OrderedDict
 import os
+from src.backtesttime import BacktestTime
+import math
 
 class Options:
     CALL = 0
@@ -18,6 +20,13 @@ class Slice:
     """
     def __init__(self) -> None:
         self.chains = {}
+        self.underlying = {}
+        
+    def add_underlying(self, asset_name, underlying):
+        self.underlying[asset_name] = underlying
+        
+    def get_underlying(self, asset_name):
+        return self.underlying[asset_name]
         
     def add_chain(self, asset_name, chain):
         self.chains[asset_name] = chain
@@ -26,25 +35,24 @@ class Slice:
         return self.chains[asset_name]
         
 class OptionContract:
-    def __init__(self, path, time) -> None:
+    def __init__(self, asset:str, contract_type:Options, strike:int, expiration: date, path:str, time: BacktestTime) -> None:
+        self.asset = asset
+        self.contract_type = contract_type
+        self.strike = strike
+        self.expiration = expiration
         self.path = path
         self.time = time
         self.df = None
-        
-        properties = os.path.basename(path).split(".")
-        self.asset = properties[1]
-        self.type = Options.CALL if properties[2][0] == "C" else Options.PUT
-        self.strike = int(properties[2][1:])
-        
-        if len(properties) == 6: # handles cases where strike has a decimal (cents)
-            self.strike += int(properties[3]) / 10**len(properties[3])
-            del properties[3]
-                    
-        self.expiration = datetime.strptime(properties[3], '%Y%m%d').strftime('%m/%d/%Y')
 
     def load_df(self):
         if self.df is None:
             self.df = pd.read_csv(self.path)
+            
+    def get_strike(self):
+        return self.strike
+    
+    def get_expiration(self):
+        return self.expiration
 
     def get_data_no_df(self):
         line = self.time.seconds_elapsed + 1
@@ -153,28 +161,122 @@ class OptionContract:
         mod_path = mod_path[-2] + '/' + mod_path[-1]
         return mod_path
     
+class UnderlyingAsset:
+    def __init__(self, asset, path, trade_date:date, time:BacktestTime) -> None:
+        self.asset = asset
+        self.path = path       
+        self.trade_date = trade_date
+        self.time = time
+        self.df = None
+        
+    def load_df(self):
+        if self.df is None:
+            self.df = pd.read_csv(self.path)
+            
+    def get_price(self, seconds_elapsed=None):
+        if self.df is None:
+            self.load_df()
+            
+        if seconds_elapsed is None:
+            seconds_elapsed = self.time.seconds_elapsed
+            
+        return self.df.iloc[seconds_elapsed]["Price"]
+    
 class DailyOptionChain:
-    def __init__(self, asset:str, paths: str, trade_date:date, time:date) -> None:
+    def __init__(self, asset:str, paths: str, underlying: UnderlyingAsset, trade_date:date, time:BacktestTime, options_filter=None) -> None:
+        """_summary_
+
+        Args:
+            asset (str): _description_
+            paths (str): _description_
+            trade_date (date): _description_
+            time (BacktestTime): _description_
+            options_filter (func, optional): Function header - options_filter(contract: OptionContract) -> bool - returns True if contract should be included in chain, False otherwise. Defaults to None.
+        """
+        
         self.asset = asset
         self.paths = paths # list of expirations paths
+        self.underlying = underlying
         self.trade_date = trade_date
         self.contracts = None
         self.time = time
+        self.options_filter = options_filter 
         
+    def set_filter(self, options_filter):
+        self.options_filter = options_filter
+        
+    def set_expiration_strike_filter(self, min_strike:int=None, max_strike:int=None, min_expiration:int=None, max_expiration:int=None):
+        """
+        Set filters based on strike and expiration.
+        
+        Args:
+            min_strike (int): The minimum strike distance from the underlying price (inclusive)
+            max_strike (int): The maximum strike distance from the underlying price (inclusive)
+            min_expiration (int): The minimum number of days until expiration (inclusive)
+            max_expiration (int): The maximum number of days until expiration (inclusive)
+        """
+        def contract_filter(contract):
+            if min_strike and self.strike_distance(contract.strike, 1) < min_strike:
+                return False
+            
+            if max_strike and self.strike_distance(contract.strike, 1) > max_strike:
+                return False
+            
+            if min_expiration and (contract.get_expiration().date() - self.time.get_time().date()).days < min_expiration:
+                return False
+            
+            if max_expiration and (contract.get_expiration().date() - self.time.get_time().date()).days > max_expiration:
+                return False
+            
+            return True
+            
+        self.set_filter(contract_filter)
+    
+    def strike_distance(self, contract_strike, strike_width)->int:
+        """
+        Get's the strike distance of the given strike number from the underlying price
+        """
+        
+        distance = (contract_strike - self.underlying.get_price()) / strike_width
+
+        if distance < 0:
+            distance = math.floor(distance)
+        else:
+            distance = math.ceil(distance)
+
+        return distance
+
+    def extract_contract_metadata(self, contract_path):
+        properties = os.path.basename(contract_path).split(".")
+        asset = properties[1]
+        contract_type = Options.CALL if properties[2][0] == "C" else Options.PUT
+        strike = int(properties[2][1:])
+        
+        if len(properties) == 6: # handles cases where strike has a decimal (cents)
+            strike += int(properties[3]) / 10**len(properties[3])
+            del properties[3]
+                    
+        expiration = datetime.strptime(properties[3], '%Y%m%d')
+        
+        return asset, contract_type, strike, expiration
+    
     def load_contracts(self):
         self.contracts = []
         for expiration_path in self.paths:
             contract_paths = glob.glob(expiration_path + "/Candles*.csv")
             
             for contract_path in contract_paths:
-                contract = OptionContract(contract_path, self.time)
+                asset, contract_type, strike, expiration = self.extract_contract_metadata(contract_path)
+                contract = OptionContract(asset, contract_type, strike, expiration, contract_path, self.time)
+            
+                if self.options_filter is not None:
+                    if not self.options_filter(contract):
+                        continue
+                    
                 self.contracts.append(contract)
         
     def get_contracts(self):
         if self.contracts is None:
             self.load_contracts()
         return self.contracts
-    
-    def set_filter(self, strike_min, strike_max, expiration_min, expiration_max):
-        pass
     
