@@ -224,6 +224,8 @@ class Engine:
 
                 self.time.increment()
 
+                return #REMOVE
+
         print("Execution Time: ", execution_time.time() - t1)
         
     def on_data(self, data: Slice):

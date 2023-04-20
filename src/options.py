@@ -7,6 +7,7 @@ from itertools import islice
 from collections import OrderedDict
 import os
 from src.backtesttime import BacktestTime
+import math
 
 class Options:
     CALL = 0
@@ -46,6 +47,12 @@ class OptionContract:
     def load_df(self):
         if self.df is None:
             self.df = pd.read_csv(self.path)
+            
+    def get_strike(self):
+        return self.strike
+    
+    def get_expiration(self):
+        return self.expiration
 
     def get_data_no_df(self):
         line = self.time.seconds_elapsed + 1
@@ -198,9 +205,38 @@ class DailyOptionChain:
     def set_filter(self, options_filter):
         self.options_filter = options_filter
         
-    def set_expiration_strike_filter(self, expiration, strike):
-        self.set_filter(lambda contract: contract.expiration == expiration and contract.strike == strike)
+    def set_expiration_strike_filter(self, min_strike=None, max_strike=None, min_expiry=None, max_expiry=None):
+        def contract_filter(contract, min_strike=min_strike, max_strike=max_strike, min_expiry=min_expiry, max_expiry=max_expiry):
+            if min_strike and self.strike_distance(contract.strike, 1) < min_strike:
+                return False
+            
+            if max_strike and self.strike_distance(contract.strike, 1) > max_strike:
+                return False
+            
+            if min_expiry and contract.expiration < min_expiry:
+                return False
+            
+            if max_expiry and contract.expiration > max_expiry:
+                return False
+            
+            return True
+            
+        self.set_filter(contract_filter)
+    
+    def strike_distance(self, contract_strike, strike_width)->int:
+        """
+        Get's the strike distance of the given strike number from the underlying price
+        """
         
+        distance = (contract_strike - self.underlying.get_price()) / strike_width
+
+        if distance < 0:
+            distance = math.floor(distance)
+        else:
+            distance = math.ceil(distance)
+
+        return distance
+
     def extract_contract_metadata(self, contract_path):
         properties = os.path.basename(contract_path).split(".")
         asset = properties[1]
@@ -234,7 +270,3 @@ class DailyOptionChain:
         if self.contracts is None:
             self.load_contracts()
         return self.contracts
-    
-    def set_filter(self, strike_min, strike_max, expiration_min, expiration_max):
-        pass
-    
