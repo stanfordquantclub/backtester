@@ -1,6 +1,7 @@
 from datetime import date, time, datetime, timedelta
 from src.engine import Engine
-from src.create_contract_candles import *
+from src.create_contract_candles import create_contract_candles_day
+from src.create_underlying_candles import create_underlying_candles, create_underlying_candles_day
 import glob
 import time as execution_time
 from src.engine import Slice
@@ -22,6 +23,13 @@ from src.portfolio import Portfolio
 #     processes=2
 # )
 
+# create_underlying_candles(
+#   '/Users/inafi/sqc/srv/sqc/data/client-2378-luke-eq-taq/2022/20221201/S/SPY.csv',
+#   output_path="/Users/inafi/sqc/srv/sqc/data/client-2378-luke-eq-taq/2022/20221201/S/",
+#   start_time=time(9, 30, 0), 
+#   end_time=time(16, 0, 0)
+# )
+
 class CustomModel(Engine):
     def initialize(self):
         self.security_name = "SPY"
@@ -35,39 +43,27 @@ class CustomModel(Engine):
         3 - Irfan's Laptop
         '''
 
-        #self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/us-options-tanq"
-        self.root_path = "/srv/sqc/data/us-options-tanq"        
-        #self.root_path = "/mnt/z/srv/sqc/data/us-options-tanq"
+        #self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/"
+        self.root_path = "/Users/inafi/sqc/srv/sqc/data/"        
+        #self.root_path = "/mnt/z/srv/sqc/data/"
         self.cash = 10**6
         
     def on_data(self, data: Slice):
         chain = data.get_chain("SPY")
+        print(chain.underlying.get_price())
+        
+        chain.set_expiration_strike_filter(min_strike=-1, max_strike=3, min_expiration=0, max_expiration=2)
         contracts = chain.get_contracts()
         
-        contract_0 = contracts[75]
-        contract_1 = contracts[70]
-        contract_2 = contracts[71]
-        # print("init")
+        for contract in contracts:
+            print(contract.get_strike(), contract.get_expiration(), contract.get_bid_max_price(), contract.get_adjusted_ask(2), contract.get_adjusted_bid(2))
+
+        # print(chain.options_filter)
+        # chain.set_expiration_strike_filter(1, 1)
+        # print(chain.options_filter)
+        
+        # contract_0 = contracts[0]
         # print(self.time.get_time(), contract_0.get_bid_max_price(), contract_0.get_adjusted_ask(2), contract_0.get_adjusted_bid(2))
-
-        if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 3600 == 0
-            and self.get_seconds_elapsed() % 7200 != 0):
-             self.buy(contract_1, 10)
-             print(self.portfolio.summary())
-
-        # if (self.get_seconds_elapsed() != 0 and self.get_seconds_elapsed() % 7200 == 0):
-        #     self.buy(contract_0, 10)
-        #     print(self.portfolio.summary())
-        
-        # if (self.get_seconds_elapsed() == 23000):
-        #     self.sell(contract_0, 40)
-        #     print(self.portfolio.summary())
-        
-        # if (self.get_seconds_elapsed() == 3600):
-        #     self.buy(contract_1, 10)
-        #     self.buy(contract_0, 10)
-        #     self.sell(contract_0, 5)
-        #     print(self.logs.get_ordered())
 
 model = CustomModel()
 model.back_test()
