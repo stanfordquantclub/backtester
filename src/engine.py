@@ -17,7 +17,7 @@ import statistics
 from datetime import date, datetime, time, timedelta
 
 class Engine:
-    def initialize_defaults(self, security_name: str=None, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/"):
+    def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/"):
         """
         Initialize the defaults for the engine
 
@@ -38,7 +38,6 @@ class Engine:
         self.time = BacktestTime(None, None, None)
         self.schedule = []
         self.portfolio = portfolio
-        self.security_name = security_name
         self.security_names = []
 
         self.start_date = start_date
