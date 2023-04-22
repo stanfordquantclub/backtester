@@ -7,7 +7,8 @@ from itertools import islice
 from collections import OrderedDict
 import os
 import math
-from src.backtesttime import BacktestTime
+from src.backtest_time import BacktestTime
+from src.underlying_asset import UnderlyingAsset
 
 class Options:
     CALL = 0
@@ -139,27 +140,6 @@ class OptionContract:
         mod_path = self.path.split('/')
         mod_path = mod_path[-2] + '/' + mod_path[-1]
         return mod_path
-    
-class UnderlyingAsset:
-    def __init__(self, asset, path, trade_date:date, time:BacktestTime) -> None:
-        self.asset = asset
-        self.path = path       
-        self.trade_date = trade_date
-        self.time = time
-        self.df = None
-        
-    def load_df(self):
-        if self.df is None:
-            self.df = pd.read_csv(self.path)
-            
-    def get_price(self, seconds_elapsed=None):
-        if self.df is None:
-            self.load_df()
-            
-        if seconds_elapsed is None:
-            seconds_elapsed = self.time.seconds_elapsed
-            
-        return self.df.iloc[seconds_elapsed]["Price"]
     
 class DailyOptionChain:
     def __init__(self, asset:str, paths: str, underlying: UnderlyingAsset, trade_date:date, time:BacktestTime, options_filter=None) -> None:

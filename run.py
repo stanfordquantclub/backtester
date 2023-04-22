@@ -4,7 +4,7 @@ from src.create_contract_candles import create_contract_candles_day
 from src.create_underlying_candles import create_underlying_candles, create_underlying_candles_day
 import glob
 import time as execution_time
-from src.slice import Slice
+from src.data_slice import Slice
 from src.portfolio import Portfolio
 
 # create_contract_candles(

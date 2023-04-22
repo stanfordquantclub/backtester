@@ -1,9 +1,9 @@
 from src.options import *
 from src.logs import Logs
 from src.order import Order
-from src.backtesttime import BacktestTime
+from src.backtest_time import BacktestTime
 from src.portfolio import Portfolio
-from src.slice import Slice
+from src.data_slice import Slice
 import pandas_market_calendars as mcal
 import pytz
 import glob
