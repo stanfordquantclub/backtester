@@ -1,8 +1,9 @@
 from src.options import *
 from src.logs import Logs
 from src.order import Order
-from src.backtesttime import BacktestTime
+from src.backtest_time import BacktestTime
 from src.portfolio import Portfolio
+from src.data_slice import Slice
 import pandas_market_calendars as mcal
 import pytz
 import glob
@@ -16,7 +17,7 @@ import statistics
 from datetime import date, datetime, time, timedelta
 
 class Engine:
-    def initialize_defaults(self, security_name: str=None, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/"):
+    def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/"):
         """
         Initialize the defaults for the engine
 
@@ -37,7 +38,7 @@ class Engine:
         self.time = BacktestTime(None, None, None)
         self.schedule = []
         self.portfolio = portfolio
-        self.security_name = security_name
+        self.security_names = []
 
         self.start_date = start_date
         self.end_date = end_date
@@ -78,6 +79,9 @@ class Engine:
 
         for day, (open_date, close_date) in schedule.iterrows():
             self.schedule.append([open_date, close_date])
+            
+    def add_security(self, security_name):
+        self.security_names.append(security_name)
 
     def get_time(self):
         return self.time.time
@@ -99,9 +103,11 @@ class Engine:
             underlying_assets = OrderedDict()
             
             for open_date, close_date in self.schedule:
-                underlying_path = f"{self.root_path}client-2378-luke-eq-taq/{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/Candles.{self.security_name}.csv"
-                
-                underlying_assets[open_date] = UnderlyingAsset(self.security_name, underlying_path, open_date, self.time)
+                for security_name in self.security_names:
+                    underlying_path = f"client-2378-luke-eq-taq/{open_date.year}/{open_date.strftime('%Y%m%d')}/{security_name[0]}/Candles.{security_name}.csv"
+                    underlying_path = os.path.join(self.root_path, underlying_path)
+                    
+                    underlying_assets[(open_date, security_name)] = UnderlyingAsset(security_name, underlying_path, open_date, self.time)
 
             return underlying_assets    
         
@@ -125,13 +131,15 @@ class Engine:
             option_chains = OrderedDict()
 
             for open_date, close_date in self.schedule:
-                # All the expirations within the day
-                data_path = f"{self.root_path}us-options-tanq/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{self.security_name[0]}/{self.security_name}/*"
-                expirations = glob.glob(data_path)
-                underlying_asset = underlying_assets[open_date]
+                for security_name in self.security_names:
+                    # All the expirations within the day
+                    data_path = f"us-options-tanq/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{security_name[0]}/{security_name}/*"
+                    data_path = os.path.join(self.root_path, data_path)
+                    
+                    expirations = glob.glob(data_path)
+                    underlying_asset = underlying_assets[(open_date, security_name)]
 
-                # Put it in array format to expand to multiple assets later
-                option_chains[open_date] = [DailyOptionChain(self.security_name, expirations, underlying_asset, open_date, self.time)]
+                    option_chains[(open_date, security_name)] = DailyOptionChain(security_name, expirations, underlying_asset, open_date, self.time)
 
             return option_chains
     
@@ -195,10 +203,12 @@ class Engine:
         self.initialize() # user defined
         self.initialize_after() # finished initialization with user defined variables
 
+        # Get the underlying assets and options chains across the backtest period (empty objects without data that point to paths)
         underlying_assets = self.get_underlying()
         options_chains = self.get_chains(underlying_assets)
 
-        t1 = execution_time.time()
+        # Start time of the backtest
+        start_time = execution_time.time()
 
         for open_date, close_date in self.schedule:
             # Iterates through each day in the schedule
@@ -209,21 +219,29 @@ class Engine:
             self.time.set_close_time(close_date)
             self.time.reset_seconds_elapsed()
 
-            chains = options_chains[open_date] # chains get redefined every day (old chains are deleted through garbage collection)
             data = Slice()
 
-            # Iterate through each asset options chain at the current date
-            for chain in chains:
-                data.add_chain(chain.asset, chain)
+            for security_name in self.security_names:
+                # Add the underlying asset and options chain to the data slice
+                underlying_asset = underlying_assets[(open_date, security_name)]
+                data.add_underlying(underlying_asset)
+                
+                chain = options_chains[(open_date, security_name)]
+                data.add_chain(chain)
 
             # Iterate through each second in the day
             while self.get_time() <= close_date:
                 self.on_data(data)
 
                 self.time.increment()
+                
+            # Remove the data from the previous day
+            for security_name in self.security_names:
+                underlying_assets.pop((open_date, security_name))
+                options_chains.pop((open_date, security_name))
 
-        print("Execution Time: ", execution_time.time() - t1)
-        
+        print("Execution Time: ", execution_time.time() - start_time)
+
     def on_data(self, data: Slice):
         """
         Method is to be overriden by subclass

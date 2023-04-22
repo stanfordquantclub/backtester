@@ -6,33 +6,13 @@ import pandas as pd
 from itertools import islice
 from collections import OrderedDict
 import os
-from src.backtesttime import BacktestTime
 import math
+from src.backtest_time import BacktestTime
+from src.underlying_asset import UnderlyingAsset
 
 class Options:
     CALL = 0
     PUT = 1
-
-class Slice:
-    """
-    This class formats row data from the csv. Used by the on_data method in 
-    Engine to pass data to the strategy.
-    """
-    def __init__(self) -> None:
-        self.chains = {}
-        self.underlying = {}
-        
-    def add_underlying(self, asset_name, underlying):
-        self.underlying[asset_name] = underlying
-        
-    def get_underlying(self, asset_name):
-        return self.underlying[asset_name]
-        
-    def add_chain(self, asset_name, chain):
-        self.chains[asset_name] = chain
-        
-    def get_chain(self, asset_name):
-        return self.chains[asset_name]
         
 class OptionContract:
     def __init__(self, asset:str, contract_type:Options, strike:int, expiration: date, path:str, time: BacktestTime) -> None:
@@ -161,27 +141,6 @@ class OptionContract:
         mod_path = mod_path[-2] + '/' + mod_path[-1]
         return mod_path
     
-class UnderlyingAsset:
-    def __init__(self, asset, path, trade_date:date, time:BacktestTime) -> None:
-        self.asset = asset
-        self.path = path       
-        self.trade_date = trade_date
-        self.time = time
-        self.df = None
-        
-    def load_df(self):
-        if self.df is None:
-            self.df = pd.read_csv(self.path)
-            
-    def get_price(self, seconds_elapsed=None):
-        if self.df is None:
-            self.load_df()
-            
-        if seconds_elapsed is None:
-            seconds_elapsed = self.time.seconds_elapsed
-            
-        return self.df.iloc[seconds_elapsed]["Price"]
-    
 class DailyOptionChain:
     def __init__(self, asset:str, paths: str, underlying: UnderlyingAsset, trade_date:date, time:BacktestTime, options_filter=None) -> None:
         """_summary_
@@ -269,14 +228,15 @@ class DailyOptionChain:
                 asset, contract_type, strike, expiration = self.extract_contract_metadata(contract_path)
                 contract = OptionContract(asset, contract_type, strike, expiration, contract_path, self.time)
             
-                if self.options_filter is not None:
-                    if not self.options_filter(contract):
-                        continue
-                    
                 self.contracts.append(contract)
         
     def get_contracts(self):
         if self.contracts is None:
             self.load_contracts()
+        
+        if self.options_filter is not None:
+            contracts = [contract for contract in self.contracts if self.options_filter(contract)]
+            return contracts
+            
         return self.contracts
     
