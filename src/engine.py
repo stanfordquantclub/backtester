@@ -105,7 +105,8 @@ class Engine:
             
             for open_date, close_date in self.schedule:
                 for security_name in self.security_names:
-                    underlying_path = f"{self.root_path}client-2378-luke-eq-taq/{open_date.year}/{open_date.strftime('%Y%m%d')}/{security_name[0]}/Candles.{security_name}.csv"
+                    underlying_path = f"client-2378-luke-eq-taq/{open_date.year}/{open_date.strftime('%Y%m%d')}/{security_name[0]}/Candles.{security_name}.csv"
+                    underlying_path = os.path.join(self.root_path, underlying_path)
                     
                     underlying_assets[(open_date, security_name)] = UnderlyingAsset(security_name, underlying_path, open_date, self.time)
 
@@ -133,11 +134,12 @@ class Engine:
             for open_date, close_date in self.schedule:
                 for security_name in self.security_names:
                     # All the expirations within the day
-                    data_path = f"{self.root_path}us-options-tanq/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{security_name[0]}/{security_name}/*"
+                    data_path = f"us-options-tanq/us-options-tanq-{open_date.year}/{open_date.strftime('%Y%m%d')}/{security_name[0]}/{security_name}/*"
+                    data_path = os.path.join(self.root_path, data_path)
+                    
                     expirations = glob.glob(data_path)
                     underlying_asset = underlying_assets[(open_date, security_name)]
 
-                    # Put it in array format to expand to multiple assets later
                     option_chains[(open_date, security_name)] = DailyOptionChain(security_name, expirations, underlying_asset, open_date, self.time)
 
             return option_chains
