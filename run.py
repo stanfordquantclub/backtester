@@ -4,7 +4,7 @@ from src.create_contract_candles import create_contract_candles_day
 from src.create_underlying_candles import create_underlying_candles, create_underlying_candles_day
 import glob
 import time as execution_time
-from src.engine import Slice
+from src.slice import Slice
 from src.portfolio import Portfolio
 
 # create_contract_candles(
@@ -32,7 +32,7 @@ from src.portfolio import Portfolio
 
 class CustomModel(Engine):
     def initialize(self):
-        self.security_name = "SPY"
+        self.add_security("SPY")
         
         self.start_date = date(2022, 12, 1)
         self.end_date = date(2022, 12, 1)
@@ -52,7 +52,7 @@ class CustomModel(Engine):
         chain = data.get_chain("SPY")
         print(chain.underlying.get_price())
         
-        chain.set_expiration_strike_filter(min_strike=-1, max_strike=3, min_expiration=0, max_expiration=2)
+        chain.set_expiration_strike_filter(min_strike=-1, max_strike=1)
         contracts = chain.get_contracts()
         
         for contract in contracts:

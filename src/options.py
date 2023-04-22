@@ -6,33 +6,12 @@ import pandas as pd
 from itertools import islice
 from collections import OrderedDict
 import os
-from src.backtesttime import BacktestTime
 import math
+from src.backtesttime import BacktestTime
 
 class Options:
     CALL = 0
     PUT = 1
-
-class Slice:
-    """
-    This class formats row data from the csv. Used by the on_data method in 
-    Engine to pass data to the strategy.
-    """
-    def __init__(self) -> None:
-        self.chains = {}
-        self.underlying = {}
-        
-    def add_underlying(self, asset_name, underlying):
-        self.underlying[asset_name] = underlying
-        
-    def get_underlying(self, asset_name):
-        return self.underlying[asset_name]
-        
-    def add_chain(self, asset_name, chain):
-        self.chains[asset_name] = chain
-        
-    def get_chain(self, asset_name):
-        return self.chains[asset_name]
         
 class OptionContract:
     def __init__(self, asset:str, contract_type:Options, strike:int, expiration: date, path:str, time: BacktestTime) -> None:
