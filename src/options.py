@@ -248,14 +248,15 @@ class DailyOptionChain:
                 asset, contract_type, strike, expiration = self.extract_contract_metadata(contract_path)
                 contract = OptionContract(asset, contract_type, strike, expiration, contract_path, self.time)
             
-                if self.options_filter is not None:
-                    if not self.options_filter(contract):
-                        continue
-                    
                 self.contracts.append(contract)
         
     def get_contracts(self):
         if self.contracts is None:
             self.load_contracts()
+        
+        if self.options_filter is not None:
+            contracts = [contract for contract in self.contracts if self.options_filter(contract)]
+            return contracts
+            
         return self.contracts
     

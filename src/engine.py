@@ -202,11 +202,12 @@ class Engine:
         self.initialize() # user defined
         self.initialize_after() # finished initialization with user defined variables
 
+        # Get the underlying assets and options chains across the backtest period (empty objects without data that point to paths)
         underlying_assets = self.get_underlying()
         options_chains = self.get_chains(underlying_assets)
-        
 
-        t1 = execution_time.time()
+        # Start time of the backtest
+        start_time = execution_time.time()
 
         for open_date, close_date in self.schedule:
             # Iterates through each day in the schedule
@@ -238,7 +239,7 @@ class Engine:
                 underlying_assets.pop((open_date, security_name))
                 options_chains.pop((open_date, security_name))
 
-        print("Execution Time: ", execution_time.time() - t1)
+        print("Execution Time: ", execution_time.time() - start_time)
 
     def on_data(self, data: Slice):
         """

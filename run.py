@@ -33,7 +33,7 @@ from src.portfolio import Portfolio
 class CustomModel(Engine):
     def initialize(self):
         self.add_security("SPY")
-        
+         
         self.start_date = date(2022, 12, 1)
         self.end_date = date(2022, 12, 1)
         
