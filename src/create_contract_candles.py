@@ -8,6 +8,43 @@ import pytz
 import multiprocessing
 import glob
 
+def create_contract_candles_paths(contract_paths, timezone:str="US/Eastern", processes=1):
+    """
+    Creates the candles based on the contract paths
+    
+    """
+    
+    def create_contract_candles_paths(contract_paths, index):
+        nyse = mcal.get_calendar('NYSE')
+        print("Creating candles for process: ", index)
+        
+        for contract_path in tqdm(contract_paths[index]):
+            index = contract_path.split("/").index("us-options-tanq")
+            day = contract_path.split("/")[index+2]
+            schedule = nyse.schedule(day, day)
+
+            schedule["market_open"] = schedule["market_open"].dt.tz_convert(pytz.timezone(timezone))
+            schedule["market_close"] = schedule["market_close"].dt.tz_convert(pytz.timezone(timezone))
+                    
+            open_time = schedule["market_open"].iloc[0].time()
+            close_time = schedule["market_close"].iloc[0].time()
+            
+            output_path = "/".join(contract_path.split("/")[:-1])
+            
+            create_contract_candles(
+                contract_path, 
+                output_path=output_path,
+                start_time=open_time,
+                end_time=close_time
+            )
+            
+    contract_paths = np.array_split(contract_paths, processes)
+    
+    for process_index in range(processes):
+        process = multiprocessing.Process(target=create_contract_candles_paths, args=(contract_paths, process_index))
+ 
+        process.start()
+
 def create_contract_candles_day(asset: str, day_path: str, output_path: str, timezone:str="US/Eastern", processes=1):
     """
     Creates the candles for every contract within a day
@@ -20,7 +57,7 @@ def create_contract_candles_day(asset: str, day_path: str, output_path: str, tim
     """
     
     def create_contract_candles_day_paths(contract_paths, output_path, open_time, close_time):
-        for contract_path in contract_paths:
+        for contract_path in tqdm(contract_paths):
             create_contract_candles(
                 contract_path, 
                 output_path=output_path,
@@ -40,7 +77,11 @@ def create_contract_candles_day(asset: str, day_path: str, output_path: str, tim
     open_time = schedule["market_open"].iloc[0].time()
     close_time = schedule["market_close"].iloc[0].time()
 
-    contract_paths = glob.glob(f"{day_path}/{asset}*.csv")
+    contract_paths = glob.glob(f"{day_path}/{asset}*.csv.gz")
+    if len(contract_paths) == 0:
+        print(f"No contracts found for {day_path}/{asset}*.csv.gz")
+        return
+    
     contract_paths = np.array_split(contract_paths, processes)
 
     for process_index in range(processes):
@@ -63,7 +104,11 @@ def create_contract_candles(file_path, output_path, start_time=time(9, 30, 0), e
         end_time (datetime.time): end time of the candles in milliseconds
     """
 
-    df = pd.read_csv(file_path)
+    if file_path.endswith(".gz"):
+        df = pd.read_csv(file_path, compression='gzip')
+        file_path = file_path[:-3]
+    elif file_path.endswith(".csv"): 
+        df = pd.read_csv(file_path)
 
     # Convert to milliseconds
     start_datetime = datetime.combine(date.today(), start_time) + timedelta(seconds=1)
