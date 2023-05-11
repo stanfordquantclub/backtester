@@ -47,7 +47,7 @@ class OptionContract:
         if seconds_elapsed is None:
             seconds_elapsed = self.time.seconds_elapsed
             
-        return self.df.iloc[seconds_elapsed]["BidMin"]
+        return self.df.iloc[seconds_elapsed]["PriceBidMin"]
             
     def get_bid_max_price(self, seconds_elapsed=None):
         if self.df is None:
@@ -56,7 +56,7 @@ class OptionContract:
         if seconds_elapsed is None:
             seconds_elapsed = self.time.seconds_elapsed
 
-        return self.df.iloc[seconds_elapsed]["BidMax"]
+        return self.df.iloc[seconds_elapsed]["PriceBidMax"]
             
     def get_ask_min_price(self, seconds_elapsed=None):
         if self.df is None:
@@ -65,7 +65,7 @@ class OptionContract:
         if seconds_elapsed is None:
             seconds_elapsed = self.time.seconds_elapsed
             
-        return self.df.iloc[seconds_elapsed]["AskMin"]
+        return self.df.iloc[seconds_elapsed]["PriceAskMin"]
     
     def get_ask_max_price(self, seconds_elapsed=None):
         if self.df is None:
@@ -74,7 +74,7 @@ class OptionContract:
         if seconds_elapsed is None:
             seconds_elapsed = self.time.seconds_elapsed
             
-        return self.df.iloc[seconds_elapsed]["AskMax"]
+        return self.df.iloc[seconds_elapsed]["PriceAskMax"]
     
     def get_adjusted_ask(self, quantity:int)->None:
         """
@@ -222,7 +222,7 @@ class DailyOptionChain:
     def load_contracts(self):
         self.contracts = []
         for expiration_path in self.paths:
-            contract_paths = glob.glob(expiration_path + "/Candles*.csv")
+            contract_paths = glob.glob(os.path.join(expiration_path + "/Candles*.csv"))
             
             for contract_path in contract_paths:
                 asset, contract_type, strike, expiration = self.extract_contract_metadata(contract_path)
