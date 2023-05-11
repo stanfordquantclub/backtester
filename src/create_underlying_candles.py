@@ -10,13 +10,16 @@ import glob
 
 def create_underlying_candles_paths(underlying_paths, timezone:str="US/Eastern", processes=1):
     """
+    Creates candles for all underlying assets in the given directory. 
+    Warning: Be aware of RAM constraints when running multiple processes.
+    
     """
 
-    def create_contract_candles_paths(underlying_paths, index):
+    def create_contract_candles_paths(underlying_paths, process_index):
         nyse = mcal.get_calendar('NYSE')
-        print("Creating candles for process: ", index)
+        print("Creating candles for process: ", process_index)
         
-        for underlying_path in tqdm(underlying_paths[index]):
+        for underlying_path in tqdm(underlying_paths[process_index]):
             index = underlying_path.split("/").index("client-2378-luke-eq-taq")
             day = underlying_path.split("/")[index + 2]
             schedule = nyse.schedule(day, day)

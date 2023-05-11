@@ -14,11 +14,11 @@ def create_contract_candles_paths(contract_paths, timezone:str="US/Eastern", pro
     
     """
     
-    def create_contract_candles_paths(contract_paths, index):
+    def create_contract_candles_paths(contract_paths, process_index):
         nyse = mcal.get_calendar('NYSE')
-        print("Creating candles for process: ", index)
+        print("Creating candles for process: ", process_index)
         
-        for contract_path in tqdm(contract_paths[index]):
+        for contract_path in tqdm(contract_paths[process_index]):
             index = contract_path.split("/").index("us-options-tanq")
             day = contract_path.split("/")[index+2]
             schedule = nyse.schedule(day, day)
