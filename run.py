@@ -51,8 +51,8 @@ class CustomModel(Engine):
         3 - Irfan's Laptop
         '''
 
-        #self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/"
-        self.root_path = "/Users/inafi/sqc/srv/sqc/data/"        
+        self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/"
+        #self.root_path = "/Users/inafi/sqc/srv/sqc/data/"        
         #self.root_path = "/mnt/z/srv/sqc/data/"
         self.cash = 10**6
         
@@ -63,9 +63,7 @@ class CustomModel(Engine):
         chain.set_expiration_strike_filter(min_strike=-1, max_strike=1)
         contracts = chain.get_contracts()
         
-        for contract in contracts:
-            print(contract.get_strike(), contract.get_expiration(), contract.get_bid_max_price(), contract.get_adjusted_ask(2), contract.get_adjusted_bid(2))
-
+        
         # print(chain.options_filter)
         # chain.set_expiration_strike_filter(1, 1)
         # print(chain.options_filter)
@@ -73,5 +71,5 @@ class CustomModel(Engine):
         # contract_0 = contracts[0]
         # print(self.time.get_time(), contract_0.get_bid_max_price(), contract_0.get_adjusted_ask(2), contract_0.get_adjusted_bid(2))
 
-# model = CustomModel()
-# model.back_test()
+model = CustomModel()
+model.back_test()

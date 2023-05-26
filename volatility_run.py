@@ -12,6 +12,7 @@ from src.data_slice import Slice
 from src.portfolio import Portfolio
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 # create_contract_candles(
@@ -53,8 +54,8 @@ class CustomModel(Engine):
         3 - Irfan's Laptop
         '''
 
-        #self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/"
-        self.root_path = "/srv/sqc/data/"    
+        self.root_path = "/Users/lukepark/sshfs_mount/srv/sqc/data/"
+        #self.root_path = "/srv/sqc/data/"    
         #self.root_path = "/Users/inafi/sqc/srv/sqc/data/"        
         #self.root_path = "/mnt/z/srv/sqc/data/"
         self.cash = 50000
@@ -71,9 +72,6 @@ class CustomModel(Engine):
         self.total_strikes = 2 * (self.max_expiration - self.min_expiration + 1) * (self.num_strikes_above - self.num_strikes_below)
         print(f"This is the number of strikes: {self.total_strikes}")
 
-        shape = (self.total_strikes, 8, 23400)
-        self.indicator_template = np.empty(shape)
-        self.cur_indicators = self.indicator_template
         self.all_contracts = []
         
     def on_data(self, data: Slice):
@@ -87,19 +85,18 @@ class CustomModel(Engine):
         elif (self.get_seconds_elapsed() == self.initialize_delay):
             self.chain.set_expiration_strike_filter(self.num_strikes_below, self.num_strikes_above, self.min_expiration, self.max_expiration)
             self.contracts_today = self.chain.get_contracts()
-            self.all_contracts.append(self.contracts_today)
+
+            for contract in self.contracts_today:
+                self.all_contracts.append(contract.get_name())
             
 
 
 
-
-                
-
-
 model = CustomModel()
 model.back_test()
-print(len(model.all_contracts))
 
-
+df = pd.DataFrame()
+df["all_files"] = model.all_contracts
+df.to_csv("/Users/lukepark/sshfs_mount/srv/sqc/volatility_exploration/all_file_names.csv")
 
 
