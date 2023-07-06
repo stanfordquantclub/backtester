@@ -7,3 +7,5 @@ Data/*
 *.txt
 *.out
 backtest_env/
+/home/eugenechoi/Documents/backtester/models/volatility-models/models/
+local-storage/

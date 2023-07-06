@@ -16,7 +16,8 @@ class DataLoader():
         main inputs: Delta_1_Ask_as_Percent, Spread_As_Percentage, QuantityBidMax, QuantityAskMin
         volatility: Min_Max_3600_Ask_as_Percent
         '''
-        cache_file = '../../cache/volatity.pkl'
+        print("----------- Loading Data ---------------")
+        cache_file = './cache/volatity.pkl'
         if os.path.exists(cache_file):
             with open(cache_file, 'rb') as f:
                 return pickle.load(f)

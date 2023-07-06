@@ -1,12 +1,13 @@
 import os
 import json
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.externals import joblib
+import joblib
 
 class ModelTrain():
 
-    def gradient_regressor(self, x_train, y_train, n_estimators, learning_rate, max_depth):
-        regressor = GradientBoostingRegressor(n_estimators, learning_rate, max_depth, random_state, verbose=1)
+    def gradient_regressor(self, x_train, y_train, n_estimators, learning_rate, max_depth, random_state):
+        print("------------ Starting Training -----------")
+        regressor = GradientBoostingRegressor(n_estimators=n_estimators, learning_rate=learning_rate, max_depth=max_depth, random_state=random_state, verbose=1)
         regressor.fit(x_train, y_train)
         configs = {
             'n_estimators': n_estimators,

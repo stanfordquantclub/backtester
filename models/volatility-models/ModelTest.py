@@ -8,14 +8,18 @@ class ModelTest():
         self.regressor = joblib.load(weights_path)
     
     def error_bounds(self, x):
-        return 0.1 * 3 ** (math.log2(x))
+        return 0.1 * 3 ** (np.log2(x))
 
     def test_regressor_scaling_error(self, input_data, output_labels):
-        y_pred = regressor.predict(input_data)
+        y_pred = self.regressor.predict(input_data)
+        print(output_labels)
+        print(y_pred)
         bounds = self.error_bounds(output_labels)
         lower_bounds = output_labels - bounds
         upper_bounds = output_labels + bounds
+        print(upper_bounds- lower_bounds)
         correct_preds = np.logical_and(y_pred >= lower_bounds, y_pred <= upper_bounds)
+        print(correct_preds)
         accuracy = np.sum(correct_preds) / len(output_labels)
         return accuracy
 
