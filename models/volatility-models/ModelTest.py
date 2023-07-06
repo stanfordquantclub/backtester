@@ -12,16 +12,10 @@ class ModelTest():
 
     def test_regressor_scaling_error(self, input_data, output_labels):
         y_pred = regressor.predict(input_data)
-        
-        # compute the error bounds
         bounds = self.error_bounds(output_labels)
         lower_bounds = output_labels - bounds
         upper_bounds = output_labels + bounds
-        
-        # mark predictions as correct or incorrect
         correct_preds = np.logical_and(y_pred >= lower_bounds, y_pred <= upper_bounds)
-        
-        # compute and return accuracy
         accuracy = np.sum(correct_preds) / len(output_labels)
         return accuracy
 

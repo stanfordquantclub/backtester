@@ -6,3 +6,4 @@ Data/*
 *.gz
 *.txt
 *.out
+backtest_env/

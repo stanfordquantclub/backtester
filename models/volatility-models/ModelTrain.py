@@ -8,7 +8,6 @@ class ModelTrain():
     def gradient_regressor(self, x_train, y_train, n_estimators, learning_rate, max_depth):
         regressor = GradientBoostingRegressor(n_estimators, learning_rate, max_depth, random_state, verbose=1)
         regressor.fit(x_train, y_train)
-
         configs = {
             'n_estimators': n_estimators,
             'learning_rate': learning_rate,

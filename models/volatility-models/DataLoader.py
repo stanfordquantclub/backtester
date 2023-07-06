@@ -21,8 +21,8 @@ class DataLoader():
             with open(cache_file, 'rb') as f:
                 return pickle.load(f)
                 
-        inputs = ["Delta_1_Ask_as_Percent", "Spread_As_Percentage", "QuantityBidMax", "QuantityAskMin"]
-        labels = "Min_Max_3600_Ask_as_Percent"
+        inputs = ["QuantityBidMax", "QuantityAskMin", "momentum_60", "momentum_120"]
+        labels = "Vol_10min"
         total_inputs = []
         total_labels = []
 
