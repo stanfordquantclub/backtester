@@ -239,14 +239,25 @@ class Engine:
             for security_name in self.security_names:
                 underlying_assets.pop((open_date, security_name))
                 options_chains.pop((open_date, security_name))
+                
+        # Call the on_end method
+        self.on_end()
 
         print("Execution Time: ", execution_time.time() - start_time)
 
     def on_data(self, data: Slice):
         """
-        Method is to be overriden by subclass
+        Method is to be overriden by subclass. This method is called every second of the backtest 
+        and is used to pass the data to the algorithm
 
         Args:
             data (Slice): data slice of the csv data
+        """
+        pass
+
+    def on_end(self):
+        """
+        Method is to be overriden by subclass. This method is called at the end of the backtest
+        and can be used to calculate statistics or analyze final variables
         """
         pass

@@ -28,6 +28,9 @@ class OptionContract:
         if self.df is None:
             self.df = pd.read_csv(self.path)
             
+    def get_contract_type(self):
+        return self.contract_type
+            
     def get_strike(self):
         return self.strike
     
