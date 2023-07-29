@@ -205,6 +205,9 @@ class DailyOptionChain:
 
         return distance
 
+    def get_underlying_price(self):
+        return self.underlying.get_price()
+
     def extract_contract_metadata(self, contract_path):
         properties = os.path.basename(contract_path).split(".")
         asset = properties[1]
