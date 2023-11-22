@@ -98,7 +98,10 @@ class Engine:
     def get_seconds_elapsed(self):
         return self.time.seconds_elapsed
 
-    def get_underlying(self):
+    def get_underlying(self, time=None):
+        if time is None:
+            time = self.time
+        
         if self.start_date and self.end_date:
             underlying_assets = OrderedDict()
             
@@ -107,11 +110,11 @@ class Engine:
                     underlying_path = f"client-2378-luke-eq-taq/{open_date.year}/{open_date.strftime('%Y%m%d')}/{security_name[0]}/Candles.{security_name}.csv"
                     underlying_path = os.path.join(self.root_path, underlying_path)
                     
-                    underlying_assets[(open_date, security_name)] = UnderlyingAsset(security_name, underlying_path, open_date, self.time)
+                    underlying_assets[(open_date, security_name)] = UnderlyingAsset(security_name, underlying_path, open_date, time)
 
             return underlying_assets    
         
-    def get_chains(self, underlying_assets):
+    def get_chains(self, underlying_assets, time=None):
         """
         Get's the data paths for the backtest
 
@@ -127,6 +130,9 @@ class Engine:
         if self.path_dates:
             return self.path_dates
         
+        if time is None:
+            time = self.time
+            
         if self.start_date and self.end_date:
             option_chains = OrderedDict()
 
@@ -139,7 +145,7 @@ class Engine:
                     expirations = glob.glob(data_path)
                     underlying_asset = underlying_assets[(open_date, security_name)]
 
-                    option_chains[(open_date, security_name)] = DailyOptionChain(security_name, expirations, underlying_asset, open_date, self.time)
+                    option_chains[(open_date, security_name)] = DailyOptionChain(security_name, expirations, underlying_asset, open_date, time)
 
             return option_chains
     
@@ -204,22 +210,27 @@ class Engine:
         self.initialize_after() # finished initialization with user defined variables
 
         # Get the underlying assets and options chains across the backtest period (empty objects without data that point to paths)
-        underlying_assets = self.get_underlying()
-        options_chains = self.get_chains(underlying_assets)
 
         # Start time of the backtest
         start_time = execution_time.time()
 
         for open_date, close_date in self.schedule:
+            time = BacktestTime(None, None, None)
+            self.time = time # sets the time of the engine to the time of the day
+
+            underlying_assets = self.get_underlying(time)
+            options_chains = self.get_chains(underlying_assets, time)
+
             # Iterates through each day in the schedule
             open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
+            
+            time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
+            time.set_open_time(open_date) # sets the open time of the day
+            time.set_close_time(close_date) # sets the close time of the day
+            time.reset_seconds_elapsed() # resets seconds elapsed to 0
+            
 
-            self.time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
-            self.time.set_open_time(open_date)
-            self.time.set_close_time(close_date)
-            self.time.reset_seconds_elapsed()
-
-            data = Slice()
+            data = Slice() # creates a new data slice for the day
 
             for security_name in self.security_names:
                 # Add the underlying asset and options chain to the data slice
@@ -230,10 +241,10 @@ class Engine:
                 data.add_chain(chain)
 
             # Iterate through each second in the day
-            while self.get_time() <= close_date:
+            while time.get_time() <= close_date:
                 self.on_data(data)
 
-                self.time.increment()
+                time.increment()
                 
             # Remove the data from the previous day
             for security_name in self.security_names:
