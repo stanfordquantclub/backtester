@@ -14,10 +14,12 @@ import os
 import statistics
 import time as execution_time
 import statistics
+import threading
 from datetime import date, datetime, time, timedelta
+from concurrent.futures import ThreadPoolExecutor, wait
 
 class Engine:
-    def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/"):
+    def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/", parallel=False):
         """
         Initialize the defaults for the engine
 
@@ -30,8 +32,8 @@ class Engine:
             path_dates (list[str]): list of paths to use for the backtest - if this is used, start_date and end_date are ignored
             timezone (str): timezone to use for the backtest
             root_path (str): root path to use for the backtest - must be absolute path
+            parallel (bool): whether to use parallel processing for the backtest (running multiple days at once) - this may be usefull for collecting statistics
         """
-        print("Initialize Defaults")
 
         self.cash = cash
 
@@ -48,6 +50,9 @@ class Engine:
         self.timezone = timezone
         self.logs = Logs()
         self.order_id = 1
+        
+        self.parallel = parallel
+        self.num_threads = 6
 
         #[[trading_day_1 {file_name: [trade_1 [buy [price, number_of_contracts], sell [price, number_of_contracts] ] ] , file_name}], [trading_day_2 {}], ]
 
@@ -205,18 +210,11 @@ class Engine:
         return self.total_return / standard_dev
 
     def back_test(self):
-        self.initialize_defaults() # initializes fields
-        self.initialize() # user defined
-        self.initialize_after() # finished initialization with user defined variables
-
-        # Get the underlying assets and options chains across the backtest period (empty objects without data that point to paths)
-
-        # Start time of the backtest
-        start_time = execution_time.time()
-
-        for open_date, close_date in self.schedule:
+        def run_day(open_date, close_date):
             time = BacktestTime(None, None, None)
-            self.time = time # sets the time of the engine to the time of the day
+            
+            if not self.parallel: # if it is parallel, then there may be multiple times running at once
+                self.time = time # sets the time of the engine to the time of the day
 
             underlying_assets = self.get_underlying(time)
             options_chains = self.get_chains(underlying_assets, time)
@@ -228,7 +226,6 @@ class Engine:
             time.set_open_time(open_date) # sets the open time of the day
             time.set_close_time(close_date) # sets the close time of the day
             time.reset_seconds_elapsed() # resets seconds elapsed to 0
-            
 
             data = Slice() # creates a new data slice for the day
 
@@ -242,7 +239,7 @@ class Engine:
 
             # Iterate through each second in the day
             while time.get_time() <= close_date:
-                self.on_data(data)
+                self.on_data(data, time)
 
                 time.increment()
                 
@@ -250,13 +247,39 @@ class Engine:
             for security_name in self.security_names:
                 underlying_assets.pop((open_date, security_name))
                 options_chains.pop((open_date, security_name))
+        
+        self.initialize_defaults() # initializes fields
+        self.initialize() # user defined
+        self.initialize_after() # finished initialization with user defined variables
+
+        # Get the underlying assets and options chains across the backtest period (empty objects without data that point to paths)
+
+        # Start time of the backtest
+        start_time = execution_time.time()
+        
+        if self.parallel:
+            with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
+                futures = []
+
+                for open_date, close_date in self.schedule:
+                    future = executor.submit(run_day, open_date, close_date)
+                    futures.append(future)
+
+                # Wait for all the futures to complete
+                wait(futures)
+        else:
+            for open_date, close_date in self.schedule:
+                run_day(open_date, close_date)
                 
         # Call the on_end method
         self.on_end()
 
         print("Execution Time: ", execution_time.time() - start_time)
 
-    def on_data(self, data: Slice):
+    def __str__(self):
+        return f"Engine({self.security_names}, {self.cash}, {self.start_date}, {self.end_date}, {self.root_path})"
+
+    def on_data(self, data: Slice, time: BacktestTime):
         """
         Method is to be overriden by subclass. This method is called every second of the backtest 
         and is used to pass the data to the algorithm
