@@ -178,16 +178,16 @@ class DailyOptionChain:
             max_expiration (int): The maximum number of days until expiration (inclusive)
         """
         def contract_filter(contract):
-            if min_strike and self.strike_distance(contract.strike, 1) < min_strike:
+            if min_strike is not None and self.strike_distance(contract.strike, 1) < min_strike:
                 return False
             
-            if max_strike and self.strike_distance(contract.strike, 1) > max_strike:
+            if max_strike is not None and self.strike_distance(contract.strike, 1) > max_strike:
                 return False
             
-            if min_expiration and (contract.get_expiration().date() - self.time.get_time().date()).days < min_expiration:
+            if min_expiration is not None and (contract.get_expiration().date() - self.time.get_time().date()).days < min_expiration:
                 return False
             
-            if max_expiration and (contract.get_expiration().date() - self.time.get_time().date()).days > max_expiration:
+            if max_expiration is not None and (contract.get_expiration().date() - self.time.get_time().date()).days > max_expiration:
                 return False
             
             return True
