@@ -14,11 +14,11 @@ class UnderlyingAsset:
         if self.df is None:
             self.df = pd.read_csv(self.path)
             
-    def get_price(self, seconds_elapsed=None):
+    def get_price(self, time_elapsed=None):
         if self.df is None:
             self.load_df()
             
-        if seconds_elapsed is None:
-            seconds_elapsed = self.time.seconds_elapsed
+        if time_elapsed is None:
+            time_elapsed = self.time.time_elapsed
             
-        return self.df.iloc[seconds_elapsed]["Price"]
+        return self.df.iloc[time_elapsed]["Price"]

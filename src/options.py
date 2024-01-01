@@ -7,6 +7,7 @@ from itertools import islice
 from collections import OrderedDict
 import os
 import math
+from src.resolution import *
 from src.backtest_time import BacktestTime
 from src.underlying_asset import UnderlyingAsset
 
@@ -38,48 +39,48 @@ class OptionContract:
         return self.expiration
 
     def get_data_no_df(self):
-        line = self.time.seconds_elapsed + 1
+        line = self.time.time_elapsed + 1
         with open(self.path) as f_input:
             for row in islice(f_input, line, line + 1):
                 return row
             
-    def get_bid_min_price(self, seconds_elapsed=None):
+    def get_bid_min_price(self, time_elapsed=None):
         if self.df is None:
             self.load_df()
             
-        if seconds_elapsed is None:
-            seconds_elapsed = self.time.seconds_elapsed
+        if time_elapsed is None:
+            time_elapsed = self.time.time_elapsed
             
-        return self.df.iloc[seconds_elapsed]["PriceBidMin"]
+        return self.df.iloc[time_elapsed]["PriceBidMin"]
             
-    def get_bid_max_price(self, seconds_elapsed=None):
+    def get_bid_max_price(self, time_elapsed=None):
         if self.df is None:
             self.load_df()
 
-        if seconds_elapsed is None:
-            seconds_elapsed = self.time.seconds_elapsed
+        if time_elapsed is None:
+            time_elapsed = self.time.time_elapsed
 
-        return self.df.iloc[seconds_elapsed]["PriceBidMax"]
+        return self.df.iloc[time_elapsed]["PriceBidMax"]
             
-    def get_ask_min_price(self, seconds_elapsed=None):
+    def get_ask_min_price(self, time_elapsed=None):
         if self.df is None:
             self.load_df()
             
-        if seconds_elapsed is None:
-            seconds_elapsed = self.time.seconds_elapsed
+        if time_elapsed is None:
+            time_elapsed = self.time.time_elapsed
             
-        return self.df.iloc[seconds_elapsed]["PriceAskMin"]
+        return self.df.iloc[time_elapsed]["PriceAskMin"]
     
-    def get_ask_max_price(self, seconds_elapsed=None):
+    def get_ask_max_price(self, time_elapsed=None):
         if self.df is None:
             self.load_df()
             
-        if seconds_elapsed is None:
-            seconds_elapsed = self.time.seconds_elapsed
+        if time_elapsed is None:
+            time_elapsed = self.time.time_elapsed
             
-        return self.df.iloc[seconds_elapsed]["PriceAskMax"]
+        return self.df.iloc[time_elapsed]["PriceAskMax"]
     
-    def get_adjusted_ask(self, quantity:int)->None:
+    def get_adjusted_ask(self, quantity:int=1)->None:
         """
         Gets the adjusted ask price (conservative) based on the current time and the next time,
         simulating one second of latency. 
@@ -96,14 +97,14 @@ class OptionContract:
         if self.time.get_time() == self.time.get_close_time():
             next_ask_price = current_ask_price
         else:
-            seconds_elapsed = self.get_seconds_elapsed()
-            next_ask_price = self.get_ask_min_price(seconds_elapsed + 1) * 0.75 + self.get_ask_max_price(seconds_elapsed + 1) * 0.25
+            time_elapsed = self.get_time_elapsed()
+            next_ask_price = self.get_ask_min_price(time_elapsed + 1) * 0.75 + self.get_ask_max_price(time_elapsed + 1) * 0.25
 
         price = round(max(current_ask_price, next_ask_price), 2) * quantity
 
         return price
 
-    def get_adjusted_bid(self, quantity:int)->None:
+    def get_adjusted_bid(self, quantity:int=1)->None:
         """
         Gets the adjusted bid price (conservative) based on the current time and the next time,
         simulating one second of latency. 
@@ -120,8 +121,8 @@ class OptionContract:
         if self.time.get_time() == self.time.get_close_time():
             next_bid_price = current_bid_price
         else:
-            seconds_elapsed = self.get_seconds_elapsed()
-            next_bid_price = self.get_bid_max_price(seconds_elapsed + 1) * 0.75 + self.get_bid_min_price(seconds_elapsed + 1) * 0.25
+            time_elapsed = self.get_time_elapsed()
+            next_bid_price = self.get_bid_max_price(time_elapsed + 1) * 0.75 + self.get_bid_min_price(time_elapsed + 1) * 0.25
 
         price = round(min(current_bid_price, next_bid_price), 2) * quantity
 
@@ -136,8 +137,8 @@ class OptionContract:
     def get_hour(self):
         return (self.time)
     
-    def get_seconds_elapsed(self):
-        return self.time.seconds_elapsed
+    def get_time_elapsed(self):
+        return self.time.time_elapsed
 
     def get_name(self):
         mod_path = self.path.split('/')
@@ -145,7 +146,7 @@ class OptionContract:
         return mod_path
     
 class DailyOptionChain:
-    def __init__(self, asset:str, paths: str, underlying: UnderlyingAsset, trade_date:date, time:BacktestTime, options_filter=None) -> None:
+    def __init__(self, asset:str, paths: str, underlying: UnderlyingAsset, trade_date:date, time:BacktestTime, resolution, options_filter=None) -> None:
         """_summary_
 
         Args:
@@ -162,6 +163,7 @@ class DailyOptionChain:
         self.trade_date = trade_date
         self.contracts = None
         self.time = time
+        self.resolution = resolution
         self.options_filter = options_filter 
         
     def set_filter(self, options_filter):
@@ -228,7 +230,10 @@ class DailyOptionChain:
     def load_contracts(self):
         self.contracts = []
         for expiration_path in self.paths:
-            contract_paths = glob.glob(os.path.join(expiration_path + "/Candles*.csv"))
+            if self.resolution == Resolution.Minute:
+                contract_paths = glob.glob(os.path.join(expiration_path + "/Candles_minutes.*.csv"))
+            else:
+                contract_paths = glob.glob(os.path.join(expiration_path + "/Candles.*.csv"))
             
             for contract_path in contract_paths:
                 asset, contract_type, strike, expiration = self.extract_contract_metadata(contract_path)

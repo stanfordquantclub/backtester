@@ -1,4 +1,5 @@
 from src.options import *
+from src.resolution import *
 from src.logs import Logs
 from src.order import Order
 from src.backtest_time import BacktestTime
@@ -19,7 +20,7 @@ from datetime import date, datetime, time, timedelta
 from concurrent.futures import ThreadPoolExecutor, wait
 
 class Engine:
-    def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/", parallel=False):
+    def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, resolution=Resolution.Second, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/", parallel=False):
         """
         Initialize the defaults for the engine
 
@@ -37,10 +38,10 @@ class Engine:
 
         self.cash = cash
 
-        self.time = BacktestTime(None, None, None)
         self.schedule = []
         self.portfolio = portfolio
         self.security_names = []
+        self.resolution = resolution
 
         self.start_date = start_date
         self.end_date = end_date
@@ -73,6 +74,9 @@ class Engine:
         user set in the initialize method.
         """
         
+        # Create the time
+        self.time = BacktestTime(None, None, None, self.resolution)
+        
         # Create the portfolio
         self.portfolio = Portfolio(self.cash, self.time)
         
@@ -100,8 +104,8 @@ class Engine:
     def get_close_time(self):
         return self.time.close_time
 
-    def get_seconds_elapsed(self):
-        return self.time.seconds_elapsed
+    def get_time_elapsed(self):
+        return self.time.time_elapsed
 
     def get_underlying(self, time=None):
         if time is None:
@@ -150,7 +154,7 @@ class Engine:
                     expirations = glob.glob(data_path)
                     underlying_asset = underlying_assets[(open_date, security_name)]
 
-                    option_chains[(open_date, security_name)] = DailyOptionChain(security_name, expirations, underlying_asset, open_date, time)
+                    option_chains[(open_date, security_name)] = DailyOptionChain(security_name, expirations, underlying_asset, open_date, time, self.resolution)
 
             return option_chains
     
@@ -169,8 +173,7 @@ class Engine:
 
         #add trade to portfolio
         self.portfolio.add_asset(contract, price, quantity)
-
-
+        
     def sell(self, contract:OptionContract, quantity:int):
         price = contract.get_adjusted_bid(quantity)
 
@@ -211,7 +214,7 @@ class Engine:
 
     def back_test(self):
         def run_day(open_date, close_date):
-            time = BacktestTime(None, None, None)
+            time = BacktestTime(None, None, None, self.resolution)
             
             if not self.parallel: # if it is parallel, then there may be multiple times running at once
                 self.time = time # sets the time of the engine to the time of the day
@@ -225,7 +228,7 @@ class Engine:
             time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
             time.set_open_time(open_date) # sets the open time of the day
             time.set_close_time(close_date) # sets the close time of the day
-            time.reset_seconds_elapsed() # resets seconds elapsed to 0
+            time.reset_time_elapsed() # resets seconds elapsed to 0
 
             data = Slice() # creates a new data slice for the day
 
