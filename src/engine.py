@@ -25,7 +25,10 @@ def run_process(engine, open_date, close_date):
     Function to run the day in a process. Needs to be outside of the class so that it can be pickled and run in a process.
     
     """
+    
+    engine.output = None
     engine.run_day(open_date, close_date)
+    return engine.output
         
 class Engine:
     def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, resolution=Resolution.Second, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/", parallel=False):
@@ -42,6 +45,8 @@ class Engine:
             timezone (str): timezone to use for the backtest
             root_path (str): root path to use for the backtest - must be absolute path
             parallel (bool): whether to use parallel processing for the backtest (running multiple days at once) - this may be usefull for collecting statistics
+                Running in parallel uses multiprocessing, which copies the engine and runs it in a separate process. This means that there is no memory shared between the processes.
+                days. You may save outputs on on_data() by setting self.output. When all the days stop running, back_test() will return a dictionary of the outputs for each day.
         """
 
         self.cash = cash
@@ -61,7 +66,7 @@ class Engine:
         self.order_id = 1
         
         self.parallel = parallel
-        self.num_threads = 6
+        self.num_processes = 6
 
         #[[trading_day_1 {file_name: [trade_1 [buy [price, number_of_contracts], sell [price, number_of_contracts] ] ] , file_name}], [trading_day_2 {}], ]
 
@@ -266,7 +271,7 @@ class Engine:
         start_time = execution_time.time()
         
         if self.parallel:
-            with multiprocessing.Pool(processes=self.num_threads) as pool:
+            with multiprocessing.Pool(processes=self.num_processes) as pool:
                 results = []
                 output = {}
 
@@ -280,7 +285,11 @@ class Engine:
 
                 pool.close()
                 pool.join()
+                
+                self.on_end()
 
+                print("Execution Time: ", execution_time.time() - start_time)
+                
                 return output
         else:                    
             for open_date, close_date in self.schedule:
