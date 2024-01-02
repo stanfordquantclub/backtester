@@ -9,16 +9,24 @@ import pandas_market_calendars as mcal
 import pytz
 import glob
 import pandas as pd
-from itertools import islice
 from collections import OrderedDict
 import os
+import sys
 import statistics
 import time as execution_time
 import statistics
-import threading
+import multiprocessing
 from datetime import date, datetime, time, timedelta
-from concurrent.futures import ThreadPoolExecutor, wait
+from contextlib import redirect_stdout
+from io import StringIO
 
+def run_process(engine, open_date, close_date):
+    """
+    Function to run the day in a process. Needs to be outside of the class so that it can be pickled and run in a process.
+    
+    """
+    engine.run_day(open_date, close_date)
+        
 class Engine:
     def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, resolution=Resolution.Second, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/", parallel=False):
         """
@@ -211,68 +219,72 @@ class Engine:
     def sharpe_ratio(self):
         standard_dev = statistics.stdev(self.trades)
         return self.total_return / standard_dev
+    
+    def run_day(self, open_date, close_date):
+        time = BacktestTime(None, None, None, self.resolution)
+        
+        if not self.parallel: # if it is parallel, then there may be multiple times running at once
+            self.time = time # sets the time of the engine to the time of the day
+
+        underlying_assets = self.get_underlying(time)
+        options_chains = self.get_chains(underlying_assets, time)
+
+        # Iterates through each day in the schedule
+        open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
+        
+        time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
+        time.set_open_time(open_date) # sets the open time of the day
+        time.set_close_time(close_date) # sets the close time of the day
+        time.reset_time_elapsed() # resets seconds elapsed to 0
+
+        data = Slice() # creates a new data slice for the day
+
+        for security_name in self.security_names:
+            # Add the underlying asset and options chain to the data slice
+            underlying_asset = underlying_assets[(open_date, security_name)]
+            data.add_underlying(underlying_asset)
+            
+            chain = options_chains[(open_date, security_name)]
+            data.add_chain(chain)
+
+        # Iterate through each second in the day
+        while time.get_time() <= close_date:
+            self.on_data(data, time)
+            time.increment()
+            
+        # Remove the data from the previous day
+        for security_name in self.security_names:
+            underlying_assets.pop((open_date, security_name))
+            options_chains.pop((open_date, security_name))
 
     def back_test(self):
-        def run_day(open_date, close_date):
-            time = BacktestTime(None, None, None, self.resolution)
-            
-            if not self.parallel: # if it is parallel, then there may be multiple times running at once
-                self.time = time # sets the time of the engine to the time of the day
-
-            underlying_assets = self.get_underlying(time)
-            options_chains = self.get_chains(underlying_assets, time)
-
-            # Iterates through each day in the schedule
-            open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
-            
-            time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
-            time.set_open_time(open_date) # sets the open time of the day
-            time.set_close_time(close_date) # sets the close time of the day
-            time.reset_time_elapsed() # resets seconds elapsed to 0
-
-            data = Slice() # creates a new data slice for the day
-
-            for security_name in self.security_names:
-                # Add the underlying asset and options chain to the data slice
-                underlying_asset = underlying_assets[(open_date, security_name)]
-                data.add_underlying(underlying_asset)
-                
-                chain = options_chains[(open_date, security_name)]
-                data.add_chain(chain)
-
-            # Iterate through each second in the day
-            while time.get_time() <= close_date:
-                self.on_data(data, time)
-
-                time.increment()
-                
-            # Remove the data from the previous day
-            for security_name in self.security_names:
-                underlying_assets.pop((open_date, security_name))
-                options_chains.pop((open_date, security_name))
-        
         self.initialize_defaults() # initializes fields
         self.initialize() # user defined
         self.initialize_after() # finished initialization with user defined variables
-
-        # Get the underlying assets and options chains across the backtest period (empty objects without data that point to paths)
 
         # Start time of the backtest
         start_time = execution_time.time()
         
         if self.parallel:
-            with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
-                futures = []
+            with multiprocessing.Pool(processes=self.num_threads) as pool:
+                results = []
+                output = {}
 
                 for open_date, close_date in self.schedule:
-                    future = executor.submit(run_day, open_date, close_date)
-                    futures.append(future)
+                    result = pool.apply_async(run_process, args=(self, open_date, close_date))
+                    results.append((open_date, result))
 
-                # Wait for all the futures to complete
-                wait(futures)
-        else:
+                # Store the results
+                for open_date, result in results:
+                    output[open_date] = result.get()
+
+                pool.close()
+                pool.join()
+
+                return output
+        else:                    
             for open_date, close_date in self.schedule:
-                run_day(open_date, close_date)
+                self.run_day(open_date, close_date)
                 
         # Call the on_end method
         self.on_end()
