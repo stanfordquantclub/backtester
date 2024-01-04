@@ -132,7 +132,7 @@ class Engine:
                     underlying_path = f"client-2378-luke-eq-taq/{open_date.year}/{open_date.strftime('%Y%m%d')}/{security_name[0]}/Candles.{security_name}.csv"
                     underlying_path = os.path.join(self.root_path, underlying_path)
                     
-                    underlying_assets[(open_date, security_name)] = UnderlyingAsset(security_name, underlying_path, open_date, time)
+                    underlying_assets[(open_date, security_name)] = UnderlyingAsset(security_name, underlying_path, open_date, time, self.resolution)
 
             return underlying_assets    
         
