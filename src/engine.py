@@ -105,6 +105,9 @@ class Engine:
     def add_security(self, security_name):
         self.security_names.append(security_name)
 
+    def get(self, field_name):
+        return getattr(self, field_name)
+    
     def get_time(self):
         return self.time.time
     
