@@ -238,7 +238,11 @@ class Engine:
         options_chains = self.get_chains(underlying_assets, time)
 
         # Iterates through each day in the schedule
-        open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
+        
+        if self.resolution == Resolution.Minute:
+            open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 31, 0)
+        else:
+            open_date_convert = datetime(open_date.year, open_date.month, open_date.day, 9, 30, 1)
         
         time.set_time(pytz.timezone('America/New_York').localize(open_date_convert)) # converts to eastern time
         time.set_open_time(open_date) # sets the open time of the day

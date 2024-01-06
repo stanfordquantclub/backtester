@@ -22,8 +22,8 @@ class UnderlyingAsset:
             
         if time_elapsed is None:
             time_elapsed = self.time.time_elapsed
-            
+
         if self.resolution == Resolution.Minute:
-            time_elapsed = 60 * (time_elapsed + 1) # Convert minute index to seconds
-            
+            time_elapsed = 60 * (time_elapsed + 1) - 1 # Minute is forward looking, so 1st minute is 0-59, 2nd minute is 60-119, etc.
+
         return self.df.iloc[time_elapsed]["Price"]
