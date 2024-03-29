@@ -1,7 +1,9 @@
 from datetime import date, datetime, time, timedelta
+import pandas as pd
+import sys
+
 from src.backtest_time import BacktestTime
 from src.resolution import *
-import pandas as pd
 
 class UnderlyingAsset:
     def __init__(self, asset, path, trade_date:date, time:BacktestTime, resolution) -> None:
@@ -27,3 +29,15 @@ class UnderlyingAsset:
             time_elapsed = 60 * (time_elapsed + 1) - 1 # Minute is forward looking, so 1st minute is 0-59, 2nd minute is 60-119, etc.
 
         return self.df.iloc[time_elapsed]["Price"]
+
+    def __sizeof__(self):
+        size = sys.getsizeof(self.asset)
+        size += sys.getsizeof(self.path)
+        size += sys.getsizeof(self.trade_date)
+        size += sys.getsizeof(self.time)
+        size += sys.getsizeof(self.df)
+        size += sys.getsizeof(self.resolution)
+        size += self.df.memory_usage().sum()
+        
+        return int(size)
+    

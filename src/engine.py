@@ -1,10 +1,3 @@
-from src.options import *
-from src.resolution import *
-from src.logs import Logs
-from src.order import Order
-from src.backtest_time import BacktestTime
-from src.portfolio import Portfolio
-from src.data_slice import Slice
 import pandas_market_calendars as mcal
 import pytz
 import glob
@@ -14,11 +7,16 @@ import os
 import sys
 import statistics
 import time as execution_time
-import statistics
 import multiprocessing
 from datetime import date, datetime, time, timedelta
-from contextlib import redirect_stdout
-from io import StringIO
+
+from src.options import *
+from src.resolution import *
+from src.logs import Logs
+from src.order import Order
+from src.backtest_time import BacktestTime
+from src.portfolio import Portfolio
+from src.data_slice import Slice
 
 def run_process(engine, open_date, close_date):
     """

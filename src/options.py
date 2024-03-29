@@ -1,12 +1,13 @@
-import pandas_market_calendars as mcal
-from datetime import date, datetime, time, timedelta
-import pytz
+import sys
 import glob
 import pandas as pd
 from itertools import islice
 from collections import OrderedDict
 import os
 import math
+import pandas_market_calendars as mcal
+from datetime import date, datetime, time, timedelta
+
 from src.resolution import *
 from src.backtest_time import BacktestTime
 from src.underlying_asset import UnderlyingAsset
@@ -145,6 +146,20 @@ class OptionContract:
         mod_path = mod_path[-2] + '/' + mod_path[-1]
         return mod_path
     
+    def __sizeof__(self):
+        size = sys.getsizeof(self.asset)
+        size += sys.getsizeof(self.contract_type)
+        size += sys.getsizeof(self.strike)
+        size += sys.getsizeof(self.expiration)
+        size += sys.getsizeof(self.path)
+        size += sys.getsizeof(self.time)
+        
+        if self.df is not None:
+            size += sys.getsizeof(self.df)
+            size += self.df.memory_usage().sum()
+
+        return int(size)
+    
 class DailyOptionChain:
     def __init__(self, asset:str, paths: str, underlying: UnderlyingAsset, trade_date:date, time:BacktestTime, resolution, options_filter=None) -> None:
         """_summary_
@@ -251,3 +266,16 @@ class DailyOptionChain:
             
         return self.contracts
     
+    def __sizeof__(self):
+        # Recursively get the size of all the contracts
+        size = sys.getsizeof(self.asset)
+        size += sys.getsizeof(self.paths)
+        size += sys.getsizeof(self.underlying)
+        size += sys.getsizeof(self.trade_date)
+        size += sys.getsizeof(self.time)
+        size += sys.getsizeof(self.resolution)
+        
+        for contract in self.contracts:
+            size += sys.getsizeof(contract)
+            
+        return size
