@@ -112,6 +112,12 @@ class Engine:
     def get(self, field_name):
         return getattr(self, field_name)
     
+    def get_assets(self):
+        return self.portfolio.get_assets()
+    
+    def get_cash(self):
+        return self.portfolio.get_cash()
+    
     def get_time(self):
         return self.time.time
     
@@ -179,10 +185,11 @@ class Engine:
             return option_chains
     
     def buy(self, contract:OptionContract, quantity:int):
-        price = contract.get_adjusted_ask(quantity)
+        price = contract.get_adjusted_ask(quantity) # Price per share (100 shares per contract)
 
          #insufficient funds to execute given trade
-        if (price > self.portfolio.cash_amount()):
+        if (price > self.portfolio.get_cash()):
+            print("Invalid buy (insufficient funds)")
             return None
 
         #adding trade to log
@@ -190,7 +197,6 @@ class Engine:
         self.logs.add_ordered(new_trade)
 
         self.order_id += 1
-
         #add trade to portfolio
         self.portfolio.add_asset(contract, price, quantity)
         
@@ -198,6 +204,7 @@ class Engine:
         price = contract.get_adjusted_bid(quantity)
 
         if (self.portfolio.valid_sell(contract, quantity) == False):
+            print("Invalid sell")
             return None
 
         new_trade = Order(contract, 2, quantity, price, self.order_id)

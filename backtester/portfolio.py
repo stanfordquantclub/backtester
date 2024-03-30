@@ -13,19 +13,24 @@ class Portfolio:
             self.all_assets[asset] += quantity
         else:
             self.all_assets[asset] = quantity
-
+            
         self.cash -= price_paid
 
     def remove_asset(self, asset, price_received, quantity):
         if (quantity < self.all_assets[asset]):
+            # Remove the quantity of the asset
             self.all_assets[asset] -= quantity
         elif (quantity == self.all_assets[asset]):
+            # Remove the asset from the portfolio
             self.all_assets.pop(asset)
 
         self.cash += price_received
 
-    def cash_amount(self):
+    def get_cash(self):
         return self.cash
+    
+    def get_assets(self):
+        return self.all_assets
 
     def assets(self):
         assets_list = [key.get_name() for key in self.all_assets.keys()]

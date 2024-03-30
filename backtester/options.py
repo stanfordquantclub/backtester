@@ -103,7 +103,7 @@ class OptionContract:
 
         price = round(max(current_ask_price, next_ask_price), 2) * quantity
 
-        return price
+        return price * 100 # 100 shares per contract
 
     def get_adjusted_bid(self, quantity:int=1)->None:
         """
@@ -127,7 +127,7 @@ class OptionContract:
 
         price = round(min(current_bid_price, next_bid_price), 2) * quantity
 
-        return price
+        return price * 100 # 100 shares per contract
     
     def get_date(self):
         return self.time.time.date()
