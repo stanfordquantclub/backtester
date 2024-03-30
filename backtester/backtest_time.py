@@ -43,6 +43,20 @@ class BacktestTime:
     def get_time_elapsed(self):
         return self.time_elapsed
 
+    def get_time_to_close(self):
+        """
+        Calculate the time left until the market closes
+
+        Returns:
+            int: Number of minutes or seconds left until the market closes
+        """
+        
+        if self.resolution == Resolution.Minute:
+            return (self.close_time - self.time).seconds // 60
+        
+        elif self.resolution == Resolution.Second:
+            return (self.close_time - self.time).seconds
+
     def reset_time_elapsed(self):
         self.time_elapsed = 0
     

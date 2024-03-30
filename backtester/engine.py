@@ -1,10 +1,7 @@
 import pandas_market_calendars as mcal
 import pytz
 import glob
-import pandas as pd
-from collections import OrderedDict
 import os
-import sys
 import statistics
 import time as execution_time
 import multiprocessing
@@ -21,17 +18,25 @@ from backtester.data_slice import Slice
 def run_process(engine, open_date, close_date):
     """
     Function to run the day in a process. Needs to be outside of the class so that it can be pickled and run in a process.
+    The output object is set in the 'on_data' method of the engine, which the user can customize.
     
+    Args:
+        engine (Engine): engine to run the day on
+        open_date (date): open date of the day
+        close_date (date): close date of the day
+        
+    Returns:
+        output: output of the day (you have to add this in the engine.initialize() method and set it in the on_data method
     """
     
-    engine.output = None
     engine.run_day(open_date, close_date)
-    return engine.output
+
+    return engine.output # returns the output of the day
         
 class Engine:
-    def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, resolution=Resolution.Second, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/", parallel=False):
+    def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, resolution=Resolution.Second, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/", parallel=False, num_processes=6):
         """
-        Initialize the defaults for the engine
+        Initialize the defaults for the engine - this is called before the user defined initialize method where the user can set their own variables
 
         Args:
             security_name (str): name of the security to backtest
@@ -45,6 +50,7 @@ class Engine:
             parallel (bool): whether to use parallel processing for the backtest (running multiple days at once) - this may be usefull for collecting statistics
                 Running in parallel uses multiprocessing, which copies the engine and runs it in a separate process. This means that there is no memory shared between the processes.
                 days. You may save outputs on on_data() by setting self.output. When all the days stop running, back_test() will return a dictionary of the outputs for each day.
+            num_processes (int): number of processes to run in parallel if parallel is set to True
         """
 
         self.cash = cash
@@ -63,10 +69,10 @@ class Engine:
         self.logs = Logs()
         self.order_id = 1
         
+        # Parallel processing
         self.parallel = parallel
-        self.num_processes = 6
-
-        #[[trading_day_1 {file_name: [trade_1 [buy [price, number_of_contracts], sell [price, number_of_contracts] ] ] , file_name}], [trading_day_2 {}], ]
+        self.num_processes = num_processes
+        self.output = {} # Store the output for each day - you can set this in the on_data method. Note that each day has a different output dictionary, so you can store different things for each day
 
         self.trades = []
         self.sharpe_ratio = 1
@@ -75,7 +81,7 @@ class Engine:
 
     def initialize(self):
         """
-        Method is to be overriden by subclass
+        Method is to be overriden by subclass. This method is called before the backtest starts and is used to set custom variables
         """
         pass
     
@@ -281,12 +287,15 @@ class Engine:
                 output = {}
 
                 for open_date, close_date in self.schedule:
-                    result = pool.apply_async(run_process, args=(self, open_date, close_date))
-                    results.append((open_date, result))
+                    result = pool.apply_async(run_process, args=(self, open_date, close_date)) # runs the day in a process and stores the returned output from 'run_process'
+                    results.append((open_date, close_date, result)) # stores the open date and the result of the process
 
                 # Store the results
-                for open_date, result in results:
-                    output[open_date] = result.get()
+                for open_date, close_date, result in results:
+                    formatted_date = open_date.strftime("%Y-%m-%d")
+                    formatted_date += " | Open: " + open_date.strftime("%H:%M:%S")
+                    formatted_date += " | Close: " + close_date.strftime("%H:%M:%S")
+                    output[formatted_date] = result.get()
 
                 pool.close()
                 pool.join()

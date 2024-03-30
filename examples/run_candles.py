@@ -1,7 +1,6 @@
 from datetime import date, time, datetime, timedelta
 import glob
 import sys
-
 sys.path.append("../")
 
 from backtester.create_contract_candles import create_contract_candles_paths
