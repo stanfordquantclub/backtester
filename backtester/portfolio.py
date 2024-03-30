@@ -8,7 +8,7 @@ class Portfolio:
         self.cash = cash
         self.all_assets = {}
 
-    def add_asset(self, asset, price_paid, quantity):
+    def buy_asset(self, asset, price_paid, quantity):
         if (asset in self.all_assets.keys()):
             self.all_assets[asset] += quantity
         else:
@@ -16,12 +16,12 @@ class Portfolio:
             
         self.cash -= price_paid
 
-    def remove_asset(self, asset, price_received, quantity):
+    def sell_asset(self, asset, price_received, quantity):
         if (quantity < self.all_assets[asset]):
             # Remove the quantity of the asset
             self.all_assets[asset] -= quantity
         elif (quantity == self.all_assets[asset]):
-            # Remove the asset from the portfolio
+            # Remove the asset from the portfolio if the quantity is equal to the asset quantity
             self.all_assets.pop(asset)
 
         self.cash += price_received
@@ -43,11 +43,8 @@ class Portfolio:
         return list
     
     def valid_sell(self, asset, quantity):
-        if asset in self.all_assets.keys():
-            if self.all_assets[asset] >= quantity:
-                return True
-        else:
-            return False
+        # Check if the asset is in the portfolio and the asset quantity is greater than the quantity to be sold
+        return asset in self.all_assets and self.all_assets[asset] >= quantity
     
     def portfolio_value(self):
         value = self.cash

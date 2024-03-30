@@ -11,7 +11,7 @@ class Order:
               id (int): unique id for each trade made
         """
         self.asset = asset
-        self.order_type = order_type
+        self.order_type = order_type # BUY or SELL
         self.quantity = quantity
         self.price_paid = price_paid
         self.id = id

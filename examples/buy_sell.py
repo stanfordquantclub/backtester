@@ -48,6 +48,7 @@ class MyBacktest(Engine):
         if time.get_time_to_close() == 15:
             contracts = chain.get_contracts()
             
+            # Get the assets in the portfolio
             asset_names = list(self.portfolio.get_assets().keys())
 
             # Sell calls

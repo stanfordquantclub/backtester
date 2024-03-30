@@ -77,7 +77,6 @@ class Engine:
         self.trades = []
         self.sharpe_ratio = 1
         self.sortino_ratio = 1
-        self.total_return = 0
 
     def initialize(self):
         """
@@ -185,6 +184,13 @@ class Engine:
             return option_chains
     
     def buy(self, contract:OptionContract, quantity:int):
+        """
+        Buys a contract and adds it to the portfolio
+
+        Args:
+            contract (OptionContract): contract object to buy
+            quantity (int): quantity of contracts to buy
+        """
         price = contract.get_adjusted_ask(quantity) # Price per share (100 shares per contract)
 
          #insufficient funds to execute given trade
@@ -197,10 +203,16 @@ class Engine:
         self.logs.add_ordered(new_trade)
 
         self.order_id += 1
-        #add trade to portfolio
-        self.portfolio.add_asset(contract, price, quantity)
+        self.portfolio.buy_asset(contract, price, quantity) # add asset to portfolio
         
     def sell(self, contract:OptionContract, quantity:int):
+        """
+        Sells a contract and removes it from the portfolio if the quantity is 0
+        
+        Args:
+            contract (OptionContract): contract object to sell
+            quantity (int): quantity of contracts to sell
+        """
         price = contract.get_adjusted_bid(quantity)
 
         if (self.portfolio.valid_sell(contract, quantity) == False):
@@ -211,14 +223,16 @@ class Engine:
         self.logs.add_ordered(new_trade)
 
         self.order_id += 1
+        self.portfolio.sell_asset(contract, price, quantity) # remove asset from portfolio
 
-        self.portfolio.remove_asset(contract, price, quantity)
-
-    def total_return(self):
+    def get_total_return(self):
         """
         Gets the total return on the portfolio
+        
+        Returns:
+            float: total return on the portfolio in percentage
         """
-        self.total_return = ((self.portfolio.cash_mount() - self.cash)/ self.cash) * 100
+        return (self.get_cash() - self.cash)/ self.cash * 100
 
     def calculate_trades(self):
         ordered_trades = self.logs.get_trades()
@@ -237,7 +251,7 @@ class Engine:
 
     def sharpe_ratio(self):
         standard_dev = statistics.stdev(self.trades)
-        return self.total_return / standard_dev
+        return self.get_total_return() / standard_dev
     
     def run_day(self, open_date, close_date):
         time = BacktestTime(None, None, None, self.resolution)
