@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from src.options import *
+from backtester.options import *
 
 class Portfolio:
     def __init__(self, cash, time):

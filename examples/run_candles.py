@@ -3,8 +3,9 @@ import glob
 import sys
 
 sys.path.append("../")
-from src.create_contract_candles import create_contract_candles_paths
-from src.create_underlying_candles import create_underlying_candles_paths
+
+from backtester.create_contract_candles import create_contract_candles_paths
+from backtester.create_underlying_candles import create_underlying_candles_paths
 
 # create_contract_candles(
 # #   'Data/SPY.C439.20221201.csv',

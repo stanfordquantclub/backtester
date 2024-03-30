@@ -5,4 +5,12 @@ Data/*
 *.vscode
 *.gz
 *.txt
+!requirements.txt
 *.out
+*.pyc
+*.pkl
+*.h5
+*.weights
+*.ipynb
+/*.py
+*.mojo

@@ -2,8 +2,8 @@ from datetime import date, datetime, time, timedelta
 import pandas as pd
 import sys
 
-from src.backtest_time import BacktestTime
-from src.resolution import *
+from backtester.backtest_time import BacktestTime
+from backtester.resolution import *
 
 class UnderlyingAsset:
     def __init__(self, asset, path, trade_date:date, time:BacktestTime, resolution) -> None:

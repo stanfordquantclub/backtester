@@ -8,9 +8,9 @@ import math
 import pandas_market_calendars as mcal
 from datetime import date, datetime, time, timedelta
 
-from src.resolution import *
-from src.backtest_time import BacktestTime
-from src.underlying_asset import UnderlyingAsset
+from backtester.resolution import *
+from backtester.backtest_time import BacktestTime
+from backtester.underlying_asset import UnderlyingAsset
 
 class Options:
     CALL = 0

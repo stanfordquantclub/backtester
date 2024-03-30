@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
-from src.resolution import *
+
+from backtester.resolution import *
 
 class BacktestTime:
     """

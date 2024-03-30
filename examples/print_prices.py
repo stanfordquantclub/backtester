@@ -1,13 +1,9 @@
 from datetime import date, time, datetime, timedelta
 import time as execution_time
 import sys
-
 sys.path.append("../")
-from src.engine import Engine
-from src.resolution import *
-from src.data_slice import Slice
-from src.backtest_time import BacktestTime
-from src.portfolio import Portfolio
+
+from backtester import Engine, Resolution, BacktestTime, Slice
 
 class CustomModel(Engine):
     def initialize(self):
@@ -18,7 +14,8 @@ class CustomModel(Engine):
         
         self.root_path = "/srv/sqc/data/"
         self.cash = 10**6
-        
+        self.resolution = Resolution.Minute
+
         self.parallel = False
         
     def on_data(self, data: Slice, time: BacktestTime):
