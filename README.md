@@ -17,10 +17,9 @@ pip install -r requirements.txt
 To create a backtest, you need to create a new class that inherits from the `Engine` class. 
 
 ```python
-from backtester import *
+from backtester import Engine, Resolution, Slice, BacktestTime
 from datetime import date
 
-# Create a new backtest object
 class MyBacktest(Engine):
     def initialize(self):
         self.add_security("SPY")

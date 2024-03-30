@@ -1,4 +1,7 @@
 class Order:
+    BUY=0
+    SELL=1
+    
     def __init__(self, asset, order_type, quantity, price_paid, id):
         """
         Args: contract_name (str): filepath to the contract that is being traded

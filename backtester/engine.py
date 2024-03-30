@@ -34,7 +34,7 @@ def run_process(engine, open_date, close_date):
     return engine.output # returns the output of the day
         
 class Engine:
-    def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, resolution=Resolution.Second, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/", parallel=False, num_processes=6):
+    def initialize_defaults(self, cash: float=None, portfolio: Portfolio=None, start_date:date=None, end_date:date=None, resolution=Resolution.Second, path_dates=None, timezone="US/Eastern", root_path="/srv/sqc/data/", parallel=False, num_processes=4):
         """
         Initialize the defaults for the engine - this is called before the user defined initialize method where the user can set their own variables
 
@@ -193,7 +193,7 @@ class Engine:
             return None
 
         #adding trade to log
-        new_trade = Order(contract, 1, quantity, price, self.order_id)
+        new_trade = Order(contract, Order.BUY, quantity, price, self.order_id)
         self.logs.add_ordered(new_trade)
 
         self.order_id += 1
@@ -207,7 +207,7 @@ class Engine:
             print("Invalid sell")
             return None
 
-        new_trade = Order(contract, 2, quantity, price, self.order_id)
+        new_trade = Order(contract, Order.SELL, quantity, price, self.order_id)
         self.logs.add_ordered(new_trade)
 
         self.order_id += 1

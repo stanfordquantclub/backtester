@@ -6,7 +6,6 @@ sys.path.append("../")
 from backtester import Engine, Resolution, BacktestTime, Slice, Options
 from datetime import date
 
-# Create a new backtest object
 class MyBacktest(Engine):
     def initialize(self):
         self.add_security("SPY")

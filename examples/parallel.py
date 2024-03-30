@@ -17,6 +17,7 @@ class ParallelModel(Engine):
         self.resolution = Resolution.Minute # or Resolution.Second
 
         self.parallel = True # or True (will run on multiple cores and call on_data in parallel for different days)
+        self.num_processes = 6 # Number of processes to run in parallel
         
     def on_data(self, data: Slice, time: BacktestTime):
         chain = data.get_chain("SPY") # Get the option chain for SPY
