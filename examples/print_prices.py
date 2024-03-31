@@ -1,3 +1,9 @@
+"""
+In this example, we will demonstrate how to print the prices of the underlying and the 
+options in the option chain. We will also filter the contracts to only include strikes between -3 and 3 
+and sort the contracts by strike.
+"""
+
 from datetime import date, time, datetime, timedelta
 import time as execution_time
 import sys

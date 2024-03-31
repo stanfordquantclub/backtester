@@ -81,8 +81,8 @@ class OptionContract:
     
     def get_adjusted_ask(self, quantity:int=1)->None:
         """
-        Gets the adjusted ask price (conservative) based on the current time and the next time,
-        simulating one second of latency. 
+        Gets the total cost of buying the given quantity of contracts at an adjusted ask price
+        (conservative) based on the current time and the next time,simulating one second of latency. 
 
         Args:
             quantity (int): The quantity of contracts to buy.
@@ -105,8 +105,8 @@ class OptionContract:
 
     def get_adjusted_bid(self, quantity:int=1)->None:
         """
-        Gets the adjusted bid price (conservative) based on the current time and the next time,
-        simulating one second of latency. 
+        Gets the total cost of buying the given quantity of contracts at an adjusted bid price
+        (conservative) based on the current time and the next time,simulating one second of latency.
 
         Args:
             quantity (int): The quantity of contracts to buy.
@@ -143,6 +143,15 @@ class OptionContract:
         mod_path = self.path.split('/')
         mod_path = mod_path[-2] + '/' + mod_path[-1]
         return mod_path
+    
+    def is_expired(self, time: BacktestTime):
+        """
+        Get whether the contract is expired or not based on the input time.
+        
+        Args:
+            time (BacktestTime): The time to check if the contract is expired or not
+        """            
+        return time.get_date() > self.expiration
     
     def __sizeof__(self):
         size = sys.getsizeof(self.asset)

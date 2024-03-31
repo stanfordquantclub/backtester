@@ -1,6 +1,6 @@
 from datetime import timedelta, datetime
 
-from backtester.resolution import *
+from backtester.resolution import Resolution
 
 class BacktestTime:
     """
@@ -30,6 +30,17 @@ class BacktestTime:
             self.time += timedelta(seconds=1)
             
         self.time_elapsed += 1
+        
+    def decrement(self):
+        if self.resolution == Resolution.Minute:
+            self.time -= timedelta(minutes=1)
+        else:
+            self.time -= timedelta(seconds=1)
+            
+        self.time_elapsed -= 1
+        
+    def get_formatted_date_time(self):
+        return datetime.fromtimestamp(self.time).strftime('%Y-%m-%d %H:%M:%S')
         
     def get_date(self):
         return self.time.date()

@@ -1,3 +1,9 @@
+"""
+In this example, we will demonstrate how to buy and sell options. We will buy calls 15 increments after open
+and sell them 15 increments before close. We will only buy calls with a strike one above and below the underlying
+price. We will also only sell calls that we have bought.
+"""
+
 from datetime import date, time, datetime, timedelta
 import time as execution_time
 import sys

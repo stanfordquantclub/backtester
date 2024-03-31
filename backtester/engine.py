@@ -218,19 +218,17 @@ class Engine:
             contract (OptionContract): contract object to buy
             quantity (int): quantity of contracts to buy
         """
-        price = contract.get_adjusted_ask(quantity) # Price per share (100 shares per contract)
+        price = self.portfolio.buy_asset(contract, quantity) # add asset to portfolio
 
-         #insufficient funds to execute given trade
-        if (price > self.portfolio.get_cash()):
-            print("Invalid buy (insufficient funds)")
+        # If there is not enough cash to buy the asset
+        if price is None:
             return None
 
-        #adding trade to log
+        # Add trade to log
         new_trade = Order(contract, Order.BUY, quantity, price, self.order_id)
         self.logs.add_ordered(new_trade)
 
         self.order_id += 1
-        self.portfolio.buy_asset(contract, price, quantity) # add asset to portfolio
         
     def sell(self, contract:OptionContract, quantity:int):
         """
@@ -240,17 +238,15 @@ class Engine:
             contract (OptionContract): contract object to sell
             quantity (int): quantity of contracts to sell
         """
-        price = contract.get_adjusted_bid(quantity)
+        price = self.portfolio.sell_asset(contract, quantity)
 
-        if (self.portfolio.valid_sell(contract, quantity) == False):
-            print("Invalid sell")
+        if price is None:
             return None
 
         new_trade = Order(contract, Order.SELL, quantity, price, self.order_id)
         self.logs.add_ordered(new_trade)
 
         self.order_id += 1
-        self.portfolio.sell_asset(contract, price, quantity) # remove asset from portfolio
 
     def run_day(self, open_date, close_date):
         time = BacktestTime(None, None, None, self.resolution)

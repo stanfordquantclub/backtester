@@ -3,7 +3,7 @@ import pandas as pd
 import sys
 
 from backtester.backtest_time import BacktestTime
-from backtester.resolution import *
+from backtester.resolution import Resolution
 
 class UnderlyingAsset:
     def __init__(self, asset, path, trade_date:date, time:BacktestTime, resolution) -> None:
