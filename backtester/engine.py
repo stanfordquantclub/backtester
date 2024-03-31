@@ -92,11 +92,8 @@ class Engine:
         user set in the initialize method.
         """
         
-        # Create the time
-        self.time = BacktestTime(None, None, None, self.resolution)
-        
         # Create the portfolio
-        self.portfolio = Portfolio(self.cash, self.time)
+        self.portfolio = Portfolio(self.cash, None)
         
         # Create the schedule
         nyse = mcal.get_calendar('NYSE')
@@ -134,6 +131,34 @@ class Engine:
     def get_time_elapsed(self):
         return self.time.time_elapsed
 
+    def get_total_return(self):
+        """
+        Gets the total return on the portfolio
+        
+        Returns:
+            float: total return on the portfolio in percentage
+        """
+        return (self.get_cash() - self.cash)/ self.cash * 100
+
+    def calculate_trades(self):
+        ordered_trades = self.logs.get_trades()
+        traded_contracts = list(ordered_trades.keys())
+
+        for contract in traded_contracts:
+            #the trades_made within one contract
+            trades_made = ordered_trades[contract]
+
+            ind = 0
+            while (len(trades_made != 0)):
+                if (trades_made[ind].get_order_type != trades_made[ind + 1].get_order_type):
+                    self.trades.append((trades_made[ind + 1].get_price_paid() - trades_made[ind].get_price_paid()) / trades_made[ind])
+                    del trades_made[ind]
+                    del trades_made[ind]
+
+    def get_sharpe_ratio(self):
+        standard_dev = statistics.stdev(self.trades)
+        return self.get_total_return() / standard_dev
+    
     def get_underlying(self, time=None):
         if time is None:
             time = self.time
@@ -227,39 +252,11 @@ class Engine:
         self.order_id += 1
         self.portfolio.sell_asset(contract, price, quantity) # remove asset from portfolio
 
-    def get_total_return(self):
-        """
-        Gets the total return on the portfolio
-        
-        Returns:
-            float: total return on the portfolio in percentage
-        """
-        return (self.get_cash() - self.cash)/ self.cash * 100
-
-    def calculate_trades(self):
-        ordered_trades = self.logs.get_trades()
-        traded_contracts = list(ordered_trades.keys())
-
-        for contract in traded_contracts:
-            #the trades_made within one contract
-            trades_made = ordered_trades[contract]
-
-            ind = 0
-            while (len(trades_made != 0)):
-                if (trades_made[ind].get_order_type != trades_made[ind + 1].get_order_type):
-                    self.trades.append((trades_made[ind + 1].get_price_paid() - trades_made[ind].get_price_paid()) / trades_made[ind])
-                    del trades_made[ind]
-                    del trades_made[ind]
-
-    def sharpe_ratio(self):
-        standard_dev = statistics.stdev(self.trades)
-        return self.get_total_return() / standard_dev
-    
     def run_day(self, open_date, close_date):
         time = BacktestTime(None, None, None, self.resolution)
         
-        if not self.parallel: # if it is parallel, then there may be multiple times running at once
-            self.time = time # sets the time of the engine to the time of the day
+        self.time = time # sets the time of the engine to the time of the day
+        self.portfolio.set_time(time) # sets the time of the portfolio to the time of the day
 
         underlying_assets = self.get_underlying(time)
         options_chains = self.get_chains(underlying_assets, time)
@@ -347,12 +344,13 @@ class Engine:
 
         Args:
             data (Slice): data slice of the csv data
+            time (BacktestTime): time object of the backtest
         """
         pass
 
     def on_end(self):
         """
         Method is to be overriden by subclass. This method is called at the end of the backtest
-        and can be used to calculate statistics or analyze final variables
+        and can be used to calculate statistics or analyze variables
         """
         pass

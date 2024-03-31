@@ -6,6 +6,30 @@ class Portfolio:
         self.cash = cash
         self.all_assets = {}
 
+    def set_time(self, time):
+        self.time = time
+
+    def get_cash(self):
+        return self.cash
+    
+    def get_assets(self):
+        return self.all_assets
+    
+    def get_value(self):
+        """
+        Gets the value of the portfolio
+        
+        Returns:
+            float: value of the portfolio
+        """
+        value = self.cash # Current liquid cash
+        
+        # Calculate the value of the portfolio
+        for asset in self.all_assets:
+            value += self.all_assets[asset] * asset.get_adjusted_bid()
+        
+        return value
+    
     def buy_asset(self, asset, price_paid, quantity):
         """
         Buy an asset and add it to the portfolio
@@ -39,12 +63,6 @@ class Portfolio:
             self.all_assets.pop(asset)
 
         self.cash += price_received
-
-    def get_cash(self):
-        return self.cash
-    
-    def get_assets(self):
-        return self.all_assets
 
     def assets(self):
         assets_list = [asset.get_name() for asset in self.all_assets]
@@ -80,18 +98,3 @@ class Portfolio:
             return False
         
         return True
-    
-    def portfolio_value(self):
-        """
-        Gets the value of the portfolio
-        
-        Returns:
-            float: value of the portfolio
-        """
-        value = self.cash # Current liquid cash
-        
-        # Calculate the value of the portfolio
-        for asset in self.all_assets:
-            value += self.all_assets[asset] * asset.get_adjusted_bid()
-        
-        return value

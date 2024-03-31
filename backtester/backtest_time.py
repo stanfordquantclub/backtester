@@ -30,6 +30,9 @@ class BacktestTime:
             self.time += timedelta(seconds=1)
             
         self.time_elapsed += 1
+        
+    def get_date(self):
+        return self.time.date()
 
     def get_time(self):
         return self.time

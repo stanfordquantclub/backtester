@@ -26,8 +26,8 @@ class MyStrategy(Engine):
 
         self.cash = 10**5 # Initial cash
 
-        self.start_date = date(2022, 12, 5) # Start date of the backtest
-        self.end_date = date(2022, 12, 10) # End date of the backtest
+        self.start_date = date(2022, 12, 5) # Start date of the backtest (inclusive)
+        self.end_date = date(2022, 12, 10) # End date of the backtest (inclusive)
 
         self.root_path = "/srv/sqc/data/" # Path to the data
         self.resolution = Resolution.Minute # Resolution of the data
