@@ -28,9 +28,9 @@ class MyBacktest(Engine):
         if time.get_time_elapsed() == 15:
             print("Open time:", time.get_open_time())
             # Filter contracts to only have contracts with one strike above and below
-            chain.set_expiration_strike_filter(min_strike=-1, max_strike=1)
+            chain.set_expiration_strike_filter(min_strike=-1, max_strike=1) 
 
-            contracts = chain.get_contracts()
+            contracts = chain.get_contracts() # Get the contracts (called after the filter is set)
             
             # Buy calls
             print("Buying calls")

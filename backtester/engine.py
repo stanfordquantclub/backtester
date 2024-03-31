@@ -6,9 +6,11 @@ import statistics
 import time as execution_time
 import multiprocessing
 from datetime import date, datetime, time, timedelta
+from collections import OrderedDict
 
-from backtester.options import *
-from backtester.resolution import *
+from backtester.options import Options, OptionContract, OptionChain
+from backtester.underlying_asset import UnderlyingAsset
+from backtester.resolution import Resolution
 from backtester.logs import Logs
 from backtester.order import Order
 from backtester.backtest_time import BacktestTime
@@ -179,7 +181,7 @@ class Engine:
                     expirations = glob.glob(data_path)
                     underlying_asset = underlying_assets[(open_date, security_name)]
 
-                    option_chains[(open_date, security_name)] = DailyOptionChain(security_name, expirations, underlying_asset, open_date, time, self.resolution)
+                    option_chains[(open_date, security_name)] = OptionChain(security_name, expirations, underlying_asset, open_date, time, self.resolution)
 
             return option_chains
     

@@ -2,13 +2,11 @@ import sys
 import glob
 import pandas as pd
 from itertools import islice
-from collections import OrderedDict
 import os
 import math
-import pandas_market_calendars as mcal
 from datetime import date, datetime, time, timedelta
 
-from backtester.resolution import *
+from backtester.resolution import Resolution
 from backtester.backtest_time import BacktestTime
 from backtester.underlying_asset import UnderlyingAsset
 
@@ -160,22 +158,23 @@ class OptionContract:
 
         return int(size)
     
-class DailyOptionChain:
-    def __init__(self, asset:str, paths: str, underlying: UnderlyingAsset, trade_date:date, time:BacktestTime, resolution, options_filter=None) -> None:
-        """_summary_
-
+class OptionChain:
+    def __init__(self, asset:str, paths: str, underlying: UnderlyingAsset, date:date, time:BacktestTime, resolution, options_filter=None) -> None:
+        """
+        An options chain for a given asset on a given trade date. Contains the paths to all the expirations for the given asset on the given trade date.
+        
         Args:
-            asset (str): _description_
-            paths (str): _description_
-            trade_date (date): _description_
-            time (BacktestTime): _description_
-            options_filter (func, optional): Function header - options_filter(contract: OptionContract) -> bool - returns True if contract should be included in chain, False otherwise. Defaults to None.
+            asset (str): name of the asset
+            paths (str): path to the directory containing the options data
+            date (date): the date of the chain
+            time (BacktestTime): the time of the chain
+            options_filter (func, optional): Function header is options_filter(contract: OptionContract) -> bool - returns True if contract should be included in chain, False otherwise. Defaults to None.
         """
         
         self.asset = asset
         self.paths = paths # list of expirations paths
         self.underlying = underlying
-        self.trade_date = trade_date
+        self.date = date
         self.contracts = None
         self.time = time
         self.resolution = resolution
@@ -271,7 +270,7 @@ class DailyOptionChain:
         size = sys.getsizeof(self.asset)
         size += sys.getsizeof(self.paths)
         size += sys.getsizeof(self.underlying)
-        size += sys.getsizeof(self.trade_date)
+        size += sys.getsizeof(self.date)
         size += sys.getsizeof(self.time)
         size += sys.getsizeof(self.resolution)
         
